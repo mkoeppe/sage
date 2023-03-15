@@ -1198,4 +1198,3 @@ class FunctionField(Field):
         """
         from .extensions import ConstantFieldExtension
         return ConstantFieldExtension(self, k)
-
