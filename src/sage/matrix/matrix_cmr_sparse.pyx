@@ -168,7 +168,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
     def is_strongly_unimodular(self):
         r"""
         Not checked
-        
+
         EXAMPLES::
 
             sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
