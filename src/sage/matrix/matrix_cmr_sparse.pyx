@@ -312,7 +312,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         return False, None  # submatrix TBD
 
     def is_cographic(self, *, time_limit=60.0, certificate=False):
-         raise NotImplementedError
+        raise NotImplementedError
 
     def is_network_matrix(self, *, time_limit=60.0, certificate=False):
         raise NotImplementedError
