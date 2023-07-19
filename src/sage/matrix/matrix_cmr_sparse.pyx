@@ -166,6 +166,25 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         return result
 
     def is_strongly_unimodular(self):
+        r"""
+        Not checked
+        
+        EXAMPLES::
+
+            sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
+            sage: M = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 2, 3, sparse=True),
+            ....:                           [[1, 0, 0], [0, 1, 0]]); M
+            [1 0 0]
+            [0 1 0]
+            sage: M.is_strongly_unimodular()
+            True
+            sage: M = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 2, 3, sparse=True),
+            ....:                           [[1, 1, 0], [-1, 1, 1]]); M
+            [ 1  1  0]
+            [-1  1  1]
+            sage: M.is_strongly_unimodular()
+            False
+        """
         cdef bint result
 
         sig_on()
