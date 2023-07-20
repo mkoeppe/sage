@@ -6,6 +6,7 @@ from libc.stdint cimport SIZE_MAX
 
 from cysignals.signals cimport sig_on, sig_off
 
+from sage.libs.cmr.cmr cimport *
 from sage.rings.integer cimport Integer
 
 from .args cimport MatrixArgs_init
@@ -155,7 +156,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             sage: M.is_unimodular()
             False
         """
-        cdef bint result
+        cdef bool result
 
         sig_on()
         try:
@@ -163,9 +164,10 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         finally:
             sig_off()
 
-        return result
+        return <bint> result
 
     def is_strongly_unimodular(self):
+<<<<<<< HEAD
         r"""
         Not checked
 
@@ -186,6 +188,9 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             False
         """
         cdef bint result
+=======
+        cdef bool result
+>>>>>>> cmr
 
         sig_on()
         try:
@@ -193,10 +198,10 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         finally:
             sig_off()
 
-        return result
+        return <bint> result
 
     def modulus(self):
-        cdef bint result
+        cdef bool result
         cdef size_t k
 
         sig_on()
@@ -211,7 +216,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             return None
 
     def strong_modulus(self):
-        cdef bint result
+        cdef bool result
         cdef size_t k
 
         sig_on()
@@ -261,7 +266,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             ...
             RuntimeError: Time limit exceeded
         """
-        cdef bint result
+        cdef bool result
         cdef CMR_GRAPH *graph = NULL
         cdef CMR_GRAPH_EDGE* forest_edges = NULL
         cdef CMR_GRAPH_EDGE* coforest_edges = NULL
@@ -280,7 +285,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             sig_off()
 
         if not certificate:
-            return result
+            return <bint> result
 
         # Until we have a proper CMR Graph backend, we just create a Sage graph with whatever backend
         from sage.graphs.graph import Graph
@@ -301,7 +306,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
                 yield edge(e)
                 i = CMRgraphEdgesNext(graph, i)
 
-        if result:
+        if <bint> result:
             sage_graph = Graph([list(vertices()), list(edges())])
             sage_forest_edges = tuple(edge(forest_edges[row])
                                       for row in range(self.nrows()))
@@ -312,7 +317,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         return False, None  # submatrix TBD
 
     def is_cographic(self, *, time_limit=60.0, certificate=False):
-        raise NotImplementedError
+         raise NotImplementedError
 
     def is_network_matrix(self, *, time_limit=60.0, certificate=False):
         raise NotImplementedError
@@ -347,7 +352,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             sage: M._is_binary_linear_matroid_regular()
             True
         """
-        cdef bint result
+        cdef bool result
         cdef CMR_REGULAR_PARAMETERS params
         cdef CMR_REGULAR_STATISTICS stats
         cdef CMR_DEC *dec = NULL
@@ -373,7 +378,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             sig_off()
 
         if not certificate:
-            return result
+            return <bint> result
 
         raise NotImplementedError
 
@@ -398,7 +403,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             True
 
         """
-        cdef bint result
+        cdef bool result
         cdef CMR_TU_PARAMETERS params
         cdef CMR_TU_STATISTICS stats
         cdef CMR_DEC *dec = NULL
@@ -424,7 +429,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             sig_off()
 
         if not certificate:
-            return result
+            return <bint> result
 
         raise NotImplementedError
 
