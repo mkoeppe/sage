@@ -167,7 +167,6 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         return <bint> result
 
     def is_strongly_unimodular(self):
-<<<<<<< HEAD
         r"""
         Not checked
 
@@ -187,10 +186,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             sage: M.is_strongly_unimodular()
             False
         """
-        cdef bint result
-=======
         cdef bool result
->>>>>>> cmr
 
         sig_on()
         try:
@@ -317,7 +313,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         return False, None  # submatrix TBD
 
     def is_cographic(self, *, time_limit=60.0, certificate=False):
-         raise NotImplementedError
+        raise NotImplementedError
 
     def is_network_matrix(self, *, time_limit=60.0, certificate=False):
         raise NotImplementedError
