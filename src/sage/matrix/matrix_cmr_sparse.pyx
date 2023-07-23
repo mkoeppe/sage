@@ -214,7 +214,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         - ``k``: ``self`` is  `k`-modular
         - ``None``: ``self`` is not `k`-modular for any `k`
 
-        TESTS::
+        EXAMPLES::
 
             sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
             sage: M = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 3, 3, sparse=True),
@@ -255,7 +255,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         - ``k``: ``self`` is  `k`-modular
         - ``None``: ``self`` is not `k`-modular for any `k`
 
-        TESTS::
+        EXAMPLES::
 
             sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
             sage: M = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 3, 3, sparse=True),
@@ -293,7 +293,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         If the matrix has full row rank, it is `k`-modular if all the full rank minor of the matrix has determinant `0,\pm k`.
         The matrix is also called strictly `k`-modular.
 
-        TESTS::
+        EXAMPLES::
 
             sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
             sage: M = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 3, 3, sparse=True),
@@ -322,7 +322,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         r"""
         A matrix is strongly k-modular if ``self`` and ``self.transpose()`` are both k-modular.
 
-        TESTS::
+        EXAMPLES::
 
             sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
             sage: M = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 3, 3, sparse=True),
