@@ -199,6 +199,7 @@ cdef class SumNode(DecompositionNode):
 cdef class OneSumNode(SumNode):
 
     def block_diagonal_repr(self):
+        from sage.matrix.special import block_diagonal_matrix
         return block_diagonal_matrix(*self.get_children_matrices(), sparse = True)
 
 #     def permuted_block_matrix(self):
