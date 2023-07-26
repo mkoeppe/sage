@@ -377,17 +377,17 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         sum.set_immutable()
         return sum
 
-    def two_sum(first_mat, second_mat, column_index, row_index):
+    def two_sum(first_mat, second_mat, column, row):
         r"""
-        Return the 2-sum matrix constructed from the given matrices ``first_mat`` and ``second_mat``, with column index of the first matrix ``column_index`` and row index of the second matrix ``row_index``.
-        Suppose that ``column_index`` indicates the last column and ``row_index`` indicates the first row, i.e, the first matrix is `M_1=\begin{bmatrix} A & a\end{bmatrix}` and the second matrix is `M_2=\begin{bmatrix} b^T \\ B\end{bmatrix}`. Then the two sum `M_1 \oplus_2 M_2 =\begin{bmatrix}A & ab^T\\ 0 & B\end{bmatrix}`.
+        Return the 2-sum matrix constructed from the given matrices ``first_mat`` and ``second_mat``, with column index of the first matrix ``column`` and row index of the second matrix ``row``.
+        Suppose that ``column`` indicates the last column and ``row`` indicates the first row, i.e, the first matrix is `M_1=\begin{bmatrix} A & a\end{bmatrix}` and the second matrix is `M_2=\begin{bmatrix} b^T \\ B\end{bmatrix}`. Then the two sum `M_1 \oplus_2 M_2 =\begin{bmatrix}A & ab^T\\ 0 & B\end{bmatrix}`.
 
         INPUT:
 
         - ``first_mat`` -- the first integer matrix
         - ``second_mat`` -- the second integer matrix
-        - ``column_index`` -- the column index of the first integer matrix
-        - ``row_index`` -- the row index of the first integer matrix
+        - ``column`` -- the column index of the first integer matrix
+        - ``row`` -- the row index of the first integer matrix
 
         EXAMPLES::
 
@@ -401,33 +401,29 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             [ 7  8  9]
             [-1 -2 -3]
             sage: Matrix_cmr_chr_sparse.two_sum(M1,M2,2,0)
-            [ 1  2 21||24 27]
-            [ 4  5 42||48 54]
-            [--------++-----]
-            [--------++-----]
-            [ 0  0 -1||-2 -3]
+            [ 1  2|21 24 27]
+            [ 4  5|42 48 54]
+            [-----+--------]
+            [ 0  0|-1 -2 -3]
             sage: M1.two_sum(M2,1,1)
-            [  1   3  -2|| -4  -6]
-            [  4   6  -5||-10 -15]
-            [-----------++-------]
-            [-----------++-------]
-            [  0   0   7||  8   9]
+            [  1   3| -2  -4  -6]
+            [  4   6| -5 -10 -15]
+            [-------+-----------]
+            [  0   0|  7   8   9]
         """
         cdef Matrix_cmr_chr_sparse sum, first, second
         cdef CMR_CHRMAT *sum_mat
         first = Matrix_cmr_chr_sparse._from_data(first_mat, immutable=False)
         second = Matrix_cmr_chr_sparse._from_data(second_mat, immutable=False)
-        if column_index < 0 or column_index >= first._mat.numColumns:
+        if column < 0 or column >= first._mat.numColumns:
             raise ValueError("First marker should be a column index of the first matrix")
-        if row_index < 0 or row_index >= second._mat.numRows:
+        if row < 0 or row >= second._mat.numRows:
             raise ValueError("Second marker should be a row index of the second matrix")
         row_subdivision = []
         column_subdivision = []
         row_subdivision.append(first._mat.numRows)
-        row_subdivision.append(second._mat.numRows)
-        column_subdivision.append(first._mat.numColumns)
-        column_subdivision.append(second._mat.numColumns)
-        CMR_CALL(CMRtwoSum(cmr, first._mat, second._mat, CMRcolumnToElement(column_index), CMRrowToElement(row_index), &sum_mat))
+        column_subdivision.append(first._mat.numColumns - 1)
+        CMR_CALL(CMRtwoSum(cmr, first._mat, second._mat, CMRcolumnToElement(column), CMRrowToElement(row), &sum_mat))
         sum = Matrix_cmr_chr_sparse._from_cmr(sum_mat, immutable=False)
         if row_subdivision or column_subdivision:
             sum.subdivide(row_subdivision, column_subdivision)
