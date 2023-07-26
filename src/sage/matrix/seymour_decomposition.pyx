@@ -157,6 +157,35 @@ cdef class DecompositionNode(SageObject):
 
     @cached_method
     def _children(self):
+        r"""
+        Returns tuple of summands, () in the case of graphic or leaf nodes.
+        EXAMPLES::
+
+            sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
+            sage: M = Matrix_cmr_chr_sparse.one_sum([[1, 0], [-1, 1]], [[1, 1], [-1, 0]], [[1, 0], [0,1]]
+            ....: ); M
+            [ 1  0| 0  0| 0  0]
+            [-1  1| 0  0| 0  0]
+            [-----+-----+-----]
+            [ 0  0| 1  1| 0  0]
+            [ 0  0|-1  0| 0  0]
+            [-----+-----+-----]
+            [ 0  0| 0  0| 1  0]
+            [ 0  0| 0  0| 0  1]
+            sage: result, certificate = M3.is_totally_unimodular(certificate=True); certificate
+            OneSumNode with 4 children
+            sage: certificate._children()
+            (GraphicNode, GraphicNode, GraphicNode, GraphicNode)
+
+            sage: M2 = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 2, 2, sparse=True), [[1, 1], [-
+            ...: 1, 0]]); M2
+            [ 1  1]
+            [-1  0]
+            sage: result, certificate = M.is_totally_unimodular(certificate=True); certificate
+            GraphicNode
+            certificate._children()
+            ()
+        """
         return tuple(create_DecompositionNode(CMRdecChild(self._dec, index),
                                               self._root or self)
                      for index in range(CMRdecNumChildren(self._dec)))
@@ -194,13 +223,13 @@ cdef class SumNode(DecompositionNode):
 
     summands = DecompositionNode._children
 
-    def get_children_matrices(self):
-        return tuple(ch.matrix() for ch in self._children())
+    def summand_matrices(self):
+        return tuple(s.matrix() for s in self._children())
 
 
 cdef class OneSumNode(SumNode):
 
-    def block_diagonal_repr(self):
+    def block_matrix_form(self):
         r"""
         EXAMPLES::
 
@@ -208,12 +237,12 @@ cdef class OneSumNode(SumNode):
             sage: M = Matrix_cmr_chr_sparse.one_sum([[1, 0], [-1, 1]], [[1, 1], [-1, 0]])
             sage: result, certificate = M.is_totally_unimodular(certificate=True); certificate
             OneSumNode with 2 children
-            sage: certificate.get_children_matrices()
+            sage: certificate.summand_matrices()
             (
             [ 1  0]  [ 1  1]
             [-1  1], [-1  0]
             )
-            sage: certificate.block_diagonal_repr()
+            sage: certificate.block_matrix_form()
             [ 1  0| 0  0]
             [-1  1| 0  0]
             [-----+-----]
@@ -232,12 +261,12 @@ cdef class OneSumNode(SumNode):
             [ 0  0| 0  0| 0  1]
             sage: result, certificate = M3.is_totally_unimodular(certificate=True); certificate
             OneSumNode with 4 children
-            sage: certificate.get_children_matrices()
+            sage: certificate.summand_matrices()
             (
-            [ 1  0]       [ 1  1]
-            [-1  1], [1], [-1  0], [1]
+            [ 1  0]  [ 1  1]
+            [-1  1], [-1  0], [1], [1]
             )
-            sage: certificate.block_diagonal_repr()
+            sage: certificate.block_matrix_form()
             [ 1  0| 0  0| 0| 0]
             [-1  1| 0  0| 0| 0]
             [-----+-----+--+--]
@@ -248,7 +277,7 @@ cdef class OneSumNode(SumNode):
             [-----+-----+--+--]
             [ 0  0| 0  0| 0| 1]
         """
-        return Matrix_cmr_chr_sparse.one_sum(*self.get_children_matrices())
+        return Matrix_cmr_chr_sparse.one_sum(*self.summand_matrices())
 
 
 cdef class TwoSumNode(SumNode):
