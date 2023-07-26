@@ -162,8 +162,8 @@ cdef class DecompositionNode(SageObject):
         EXAMPLES::
 
             sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
-            sage: M = Matrix_cmr_chr_sparse.one_sum([[1, 0], [-1, 1]], [[1, 1], [-1, 0]], [[1, 0], [0,1]]
-            ....: ); M
+            sage: M = Matrix_cmr_chr_sparse.one_sum([[1, 0], [-1, 1]],
+            ....: [[1, 1], [-1, 0]], [[1, 0], [0,1]]); M
             [ 1  0| 0  0| 0  0]
             [-1  1| 0  0| 0  0]
             [-----+-----+-----]
@@ -177,8 +177,8 @@ cdef class DecompositionNode(SageObject):
             sage: certificate._children()
             (GraphicNode, GraphicNode, GraphicNode, GraphicNode)
 
-            sage: M2 = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 2, 2, sparse=True), [[1, 1], [-
-            ...: 1, 0]]); M2
+            sage: M2 = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 2, 2, sparse=True),
+            ...:  [[1, 1], [-1, 0]]); M2
             [ 1  1]
             [-1  0]
             sage: result, certificate = M.is_totally_unimodular(certificate=True); certificate
@@ -250,7 +250,7 @@ cdef class OneSumNode(SumNode):
             [ 0  0|-1  0]
 
             sage: M3 = Matrix_cmr_chr_sparse.one_sum([[1, 0], [-1, 1]], [[1, 1], [-1, 0]], [[1, 0], [0,1]]
-            ....: ); M3
+            ....: [[1, 1], [-1, 0]], [[1, 0], [0,1]]); M3
             [ 1  0| 0  0| 0  0]
             [-1  1| 0  0| 0  0]
             [-----+-----+-----]
