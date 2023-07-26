@@ -193,14 +193,29 @@ cdef class SumNode(DecompositionNode):
 
     summands = DecompositionNode._children
 
+    def get_children_matrices(self):
+        return tuple(ch.matrix() for ch in self._children())
 
 cdef class OneSumNode(SumNode):
 
-    pass
+    def block_diagonal_repr(self):
+        return block_diagonal_matrix(*self.get_children_matrices(), sparse = True)
+
+#     def permuted_block_matrix(self):
+#         rows, cols = self.parent_rows_and_columns()
+#         BlockMatrix = self.block_diagonal_repr()
+#         Prows, Pcols = []
+#         for ch in self._children:
+#             chrows, chcols = ch.parent_rows_and_columns()
+#             for i in range(len(chrows)):
+#                 Prows.append(chrows[i])
+#             for j in range(len(chcols)):
+#                 Pcols.append(chcols[i])
+
 
 
 cdef class TwoSumNode(SumNode):
-
+    
     pass
 
 
