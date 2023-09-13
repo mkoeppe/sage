@@ -499,23 +499,11 @@ cdef class SpecialLeafNode(DecompositionNode):
 
     def _repr_(self):
         return f'Isomorphic to a minor of {self._matroid()}'
-<<<<<<< HEAD
-
     def rep_matrix(self):
         r"""
         WIP
         """
         assert NotImplementedError
-
-=======
-
-    def rep_matrix(self):
-        r"""
-        WIP
-        """
-        assert NotImplementedError
-
->>>>>>> refs/remotes/origin/cmr_3sum
         cdef int representation_matrix
         cdef CMR_DEC_TYPE typ = CMRdecIsSpecialLeaf(self._dec, &representation_matrix)
         return Matrix_cmr_chr_sparse._from_data(representation_matrix, immutable=False)
