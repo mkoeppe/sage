@@ -807,6 +807,10 @@ REFERENCES:
              Stein. strassen_window_multiply_c. strassen.pyx, Sage
              3.0, 2008. http://www.sagemath.org
 
+.. [BHS2023] Jose Bastidas, Christophe Hohlweg, and Franco Saliola.
+             *The primitive Eulerian polynomial*.
+             Preprint, (2023) :arxiv:`2306.15556`.
+
 .. [BrHu2019] Petter Brändén, June Huh. *Lorentzian polynomials*.
               Ann. Math. (2) 192, No. 3, 821-891 (2020).
               :arxiv:`1902.03719`, :doi:`10.4007/annals.2020.192.3.4`.
@@ -2660,6 +2664,9 @@ REFERENCES:
             and Related Problems*, PhD thesis, Princetown University,
             TR-737-05, (2005).
             ftp://ftp.cs.princeton.edu/reports/2005/737.pdf
+
+.. [Gek1988] \E.-U. Gekeler, On the coefficients of Drinfel'd modular
+             forms. Invent. Math. 93 (1988), no. 3, 667-700
 
 .. [Gek1991] \E.-U. Gekeler. On finite Drinfeld modules. Journal of
              algebra, 1(141):187–203, 1991.
@@ -4581,6 +4588,9 @@ REFERENCES:
 .. [Mil1974] \J. W. Milnor and J. D. Stasheff, *Characteristic Classes*,
              University Press, Princeton and Tokyo, 1974.
 
+.. [Mil2006] \J. W. Milnor, *On Lattes maps*,
+             Dynamics on the Riemann sphere, Eur. Math. Soc., 9–43
+
 .. [Mil1978] \S. Milne, *A q-analog of restricted growth functions,
              Dobinsky’s equality and Charlier
              polynomials*. Trans. Amer. Math. Soc., 245 (1978),
@@ -5545,7 +5555,10 @@ REFERENCES:
              spaces* in Scientific contributions in honor of Mirian
              Andrés Gómez, pp 507-519, Univ. La Rioja Serv. Publ., Logroño (2010).
 
-.. [Sey1981] \P. D. Seymour, Nowhere-zero 6-flows, J. Comb. Theory Ser B,
+.. [Sey1980] \P. D. Seymour, *Decomposition of regular matroids*,
+             J. Comb. Theory Ser B, 28 (1980), 305-359.
+
+.. [Sey1981] \P. D. Seymour, *Nowhere-zero 6-flows*, J. Comb. Theory Ser B,
              30 (1981), 130-135. :doi:`10.1016/0095-8956(81)90058-7`
 
 .. [SH1995] \C. P. Schnorr and H. H. Hörner. *Attacking the

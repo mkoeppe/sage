@@ -3,6 +3,17 @@ r"""
 Seymour's decomposition of totally unimodular matrices and regular matroids
 """
 
+# ****************************************************************************
+#       Copyright (C) 2023 Matthias Koeppe
+#                     2023 Javier Santillan
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#                  https://www.gnu.org/licenses/
+# ****************************************************************************
+
 from sage.libs.cmr.cmr cimport *
 from sage.misc.cachefunc import cached_method
 from sage.rings.integer_ring import ZZ
@@ -13,6 +24,9 @@ from .matrix_space import MatrixSpace
 
 
 cdef class DecompositionNode(SageObject):
+    r"""
+    Base class for nodes in Seymour's decomposition
+    """
 
     def __cinit__(self):
         self._dec = NULL
@@ -154,6 +168,8 @@ cdef class DecompositionNode(SageObject):
 
     def plot(self, **kwds):
         r"""
+        Plot the decomposition tree rooted at ``self``.
+
         EXAMPLES::
 
             sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
@@ -233,6 +249,9 @@ cdef class UnknownNode(DecompositionNode):
 
 
 cdef class SumNode(DecompositionNode):
+    r"""
+    Base class for 1-sum, 2-sum, and 3-sum nodes in Seympur's decomposition
+    """
 
     def _repr_(self):
         result = super()._repr_()
@@ -480,6 +499,7 @@ cdef class SpecialLeafNode(DecompositionNode):
 
     def _repr_(self):
         return f'Isomorphic to a minor of {self._matroid()}'
+<<<<<<< HEAD
 
     def rep_matrix(self):
         r"""
@@ -487,6 +507,15 @@ cdef class SpecialLeafNode(DecompositionNode):
         """
         assert NotImplementedError
 
+=======
+
+    def rep_matrix(self):
+        r"""
+        WIP
+        """
+        assert NotImplementedError
+
+>>>>>>> refs/remotes/origin/cmr_3sum
         cdef int representation_matrix
         cdef CMR_DEC_TYPE typ = CMRdecIsSpecialLeaf(self._dec, &representation_matrix)
         return Matrix_cmr_chr_sparse._from_data(representation_matrix, immutable=False)
