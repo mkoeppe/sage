@@ -520,7 +520,6 @@ cdef class Matrix_integer_dense(Matrix_dense):
         # TODO: *maybe* redo this to use mpz_import and mpz_export
         # from sec 5.14 of the GMP manual. ??
         cdef int i, j, len_so_far, m, n
-        cdef char *a
         cdef char *s
         cdef char *t
         cdef char *tmp
@@ -1371,12 +1370,12 @@ cdef class Matrix_integer_dense(Matrix_dense):
         if algorithm == 'flint':
             g = (<Polynomial_integer_dense_flint> PolynomialRing(ZZ, names=var).gen())._new()
             sig_on()
-            fmpz_mat_charpoly(g.__poly, self._matrix)
+            fmpz_mat_charpoly(g._poly, self._matrix)
             sig_off()
         elif algorithm == 'linbox':
             g = (<Polynomial_integer_dense_flint> PolynomialRing(ZZ, names=var).gen())._new()
             sig_on()
-            linbox_fmpz_mat_charpoly(g.__poly, self._matrix)
+            linbox_fmpz_mat_charpoly(g._poly, self._matrix)
             sig_off()
         elif algorithm == 'generic':
             g = Matrix_dense.charpoly(self, var)
@@ -1460,7 +1459,7 @@ cdef class Matrix_integer_dense(Matrix_dense):
         if algorithm == 'linbox':
             g = (<Polynomial_integer_dense_flint> PolynomialRing(ZZ, names=var).gen())._new()
             sig_on()
-            linbox_fmpz_mat_minpoly(g.__poly, self._matrix)
+            linbox_fmpz_mat_minpoly(g._poly, self._matrix)
             sig_off()
         elif algorithm == 'generic':
             g = Matrix_dense.minpoly(self, var)
@@ -1537,16 +1536,12 @@ cdef class Matrix_integer_dense(Matrix_dense):
         """
         cdef Integer h
         cdef Matrix_integer_dense left = <Matrix_integer_dense>self
-        cdef mod_int *moduli
-        cdef int i, n, k
+        cdef int i, k
 
         nr = left._nrows
         nc = right._ncols
-        snc = left._ncols
-
 
         cdef Matrix_integer_dense result
-
 
         h = left.height() * right.height() * left.ncols()
         verbose('multiplying matrices of height %s and %s'%(left.height(),right.height()))
@@ -1601,7 +1596,6 @@ cdef class Matrix_integer_dense(Matrix_dense):
         from .matrix_modn_dense_double import MAX_MODULUS as MAX_MODULUS_DOUBLE
 
         cdef Py_ssize_t i, j
-        cdef mpz_t* self_row
 
         cdef float* res_row_f
         cdef Matrix_modn_dense_float res_f
@@ -2015,7 +2009,7 @@ cdef class Matrix_integer_dense(Matrix_dense):
         if ans is not None:
             return ans
 
-        cdef Matrix_integer_dense H_m,w,U
+        cdef Matrix_integer_dense H_m, U
         cdef Py_ssize_t nr, nc, n, i, j
         nr = self._nrows
         nc = self._ncols
@@ -3779,7 +3773,6 @@ cdef class Matrix_integer_dense(Matrix_dense):
         if not self.is_square():
             raise ValueError("self must be a square matrix")
 
-        cdef Py_ssize_t n = self.nrows()
         cdef Integer det = Integer()
         cdef fmpz_t e
 
@@ -4698,7 +4691,7 @@ cdef class Matrix_integer_dense(Matrix_dense):
         """
         if self._nrows == 0:
             pivots = []
-            nonpivots = list(xrange(self._ncols))
+            nonpivots = list(range(self._ncols))
             X = self.__copy__()
             d = Integer(1)
             return pivots, nonpivots, X, d
@@ -4906,7 +4899,7 @@ cdef class Matrix_integer_dense(Matrix_dense):
             [  0   0 545], [0, 1, 2]
             )
         """
-        cdef Py_ssize_t i, j, piv, n = self._nrows, m = self._ncols
+        cdef Py_ssize_t i, j, n = self._nrows, m = self._ncols
 
         from .constructor import matrix
 
@@ -4967,7 +4960,6 @@ cdef class Matrix_integer_dense(Matrix_dense):
                 new_top = s*row_i  +  t*row_n
                 new_bot = bg*row_i - ag*row_n
 
-
                 # OK -- now we have to make sure the top part of the matrix
                 # but with row i replaced by
                 #     r = s*row_i[j]  +  t*row_n[j]
@@ -4975,7 +4967,7 @@ cdef class Matrix_integer_dense(Matrix_dense):
                 # function with the top part of A (all but last row) and the
                 # row r.
 
-                zz = list(xrange(A.nrows() - 1))
+                zz = list(range(A.nrows() - 1))
                 del zz[i]
                 top_mat = A.matrix_from_rows(zz)
                 new_pivots = list(pivots)
@@ -5403,9 +5395,8 @@ cdef class Matrix_integer_dense(Matrix_dense):
         n = ns + na
 
         cdef Matrix_integer_dense Z
-        Z = self.new_matrix(nrows = m, ncols = n)
-        cdef Py_ssize_t i, j, p, qs, qa
-        p, qs, qa = 0, 0, 0
+        Z = self.new_matrix(nrows=m, ncols=n)
+        cdef Py_ssize_t i, j
         for i from 0 <= i < m:
             for j from 0 <= j < ns:
                 fmpz_set(fmpz_mat_entry(Z._matrix,i,j),
@@ -5478,7 +5469,7 @@ cdef class Matrix_integer_dense(Matrix_dense):
         Return matrix obtained from self by deleting all zero columns along
         with the positions of those columns.
 
-        OUTPUT: matrix list of integers
+        OUTPUT: (matrix, list of integers)
 
         EXAMPLES::
 
@@ -5491,10 +5482,9 @@ cdef class Matrix_integer_dense(Matrix_dense):
             [-1  5], [1]
             )
         """
-        C = self.columns()
-        zero_cols = [i for i,v in enumerate(self.columns()) if v.is_zero()]
+        zero_cols = [i for i, v in enumerate(self.columns()) if v.is_zero()]
         s = set(zero_cols)
-        nonzero_cols = [i for i in range(self.ncols()) if not (i in s)]
+        nonzero_cols = [i for i in range(self.ncols()) if i not in s]
         return self.matrix_from_columns(nonzero_cols), zero_cols
 
     def _insert_zero_columns(self, cols):
