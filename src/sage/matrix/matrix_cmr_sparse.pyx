@@ -461,7 +461,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         column_subdivision = []
         row_subdivision.append(first._mat.numRows)
         column_subdivision.append(first._mat.numColumns - 1)
-        characteristic = 0
+        cdef int8_t characteristic = 0
         CMR_CALL(CMRtwoSum(cmr, first._mat, second._mat,
                            CMRcolumnToElement(column), CMRrowToElement(row), characteristic,
                            &sum_mat))
