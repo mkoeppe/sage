@@ -108,7 +108,7 @@ of the directory containing the Sage sources:
             setup.py
             ...
             sage/            # Sage library
-                ext_data/    # extra Sage resources (formerly src/ext)
+                ext_data/    # extra Sage resources (legacy)
             bin/             # the scripts in local/bin that are tracked
         upstream/            # tarballs of upstream sources
         local/               # installed binaries
@@ -164,6 +164,16 @@ of the following places:
   to it as ::
 
     os.path.join(os.path.dirname(__file__), 'sage-maxima.lisp')
+
+- Large data files should not be added to the Sage source tree.
+  Instead:
+
+  - Create a separate git repository for them
+  - Add metadata in your repository that make it a pip-installable
+    package (distribution package)
+  - Upload it to PyPI
+  - Create metadata in ``SAGE_ROOT/build/pkgs`` that make your new
+    pip-installable package known to Sage
 
 - In an appropriate subdirectory of ``SAGE_ROOT/src/sage/ext_data/``.
   (At runtime, it is then available in the directory indicated by
