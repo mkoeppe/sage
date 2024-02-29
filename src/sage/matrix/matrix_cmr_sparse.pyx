@@ -581,6 +581,72 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         sum.set_immutable()
         return sum
 
+    def three_sum_cmr(first_mat, second_mat,
+                  first_index1, first_index2, second_index1, second_index2,
+                  three_sum_strategy="distributed_ranks"):
+        r"""
+
+
+        EXAMPLES::
+
+            sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
+            sage: M1 = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 2, 3, sparse=True),
+            ....:                            [[1, 2, 3], [4, 5, 6]]); M1
+            [1 2 3]
+            [4 5 6]
+            sage: M2 = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 2, 3, sparse=True),
+            ....:                            [[7, 8, 9], [-1, -2, -3]]); M2
+            [ 7  8  9]
+            [-1 -2 -3]
+        """
+        cdef Matrix_cmr_chr_sparse sum, first, second
+        cdef CMR_CHRMAT *sum_mat
+        first = Matrix_cmr_chr_sparse._from_data(first_mat, immutable=False)
+        second = Matrix_cmr_chr_sparse._from_data(second_mat, immutable=False)
+
+        if three_sum_strategy not in ["distributed_ranks", "concentrated_rank"]:
+            raise ValueError("Unknown three sum mode", three_sum_strategy)
+
+        if three_sum_strategy == "distributed_ranks":
+            row1 = first_index1
+            column2 = first_index2
+            column1 = second_index1
+            row2 = second_index2
+            if row1 < 0 or row1 >= first._mat.numRows:
+                raise ValueError("First marker 1 should be a row index of the first matrix")
+            if column2 < 0 or column2 >= first._mat.numColumns:
+                raise ValueError("First marker 2 should be a column index of the first matrix")
+            if column1 < 0 or column1 >= second._mat.numColumns:
+                raise ValueError("Second marker 1 should be a column index of the second matrix")
+            if row2 < 0 or row2 >= second._mat.numRows:
+                raise ValueError("Second marker 2 should be a row index of the second matrix")
+            first_marker1 = CMRrowToElement(row1)
+            first_marker2 = CMRcolumnToElement(column2)
+            second_marker1 = CMRcolumnToElement(column1)
+            second_marker2 = CMRrowToElement(row2)
+        else:
+            row1 = first_index1
+            row2 = first_index2
+            column1 = second_index1
+            column2 = second_index2
+            if row1 < 0 or row1 >= first._mat.numRows:
+                raise ValueError("First marker 1 should be a Row index of the first matrix")
+            if row2 < 0 or row2 >= first._mat.numRows:
+                raise ValueError("First marker 2 should be a Row index of the first matrix")
+            if column1 < 0 or column1 >= second._mat.numColumns:
+                raise ValueError("Second marker 1 should be a column index of the second matrix")
+            if column2 < 0 or column2 >= second._mat.numColumns:
+                raise ValueError("Second marker 2 should be a column index of the second matrix")
+            first_marker1 = CMRrowToElement(row1)
+            first_marker2 = CMRrowToElement(row2)
+            second_marker1 = CMRcolumnToElement(column1)
+            second_marker2 = CMRcolumnToElement(column2)
+
+        cdef int8_t characteristic = 0
+        CMR_CALL(CMRthreeSum(cmr, first._mat, second._mat, first_marker1, second_marker1, first_marker2, second_marker2, characteristic, &sum_mat))
+        sum = Matrix_cmr_chr_sparse._from_cmr(sum_mat)
+        return sum
+
     def three_sum(first_mat, second_mat, first_col_index1, first_col_index2, second_col_index1, second_col_index2):
         r"""
         Return the 3-sum matrix constructed from the given matrices ``first_mat`` and
@@ -730,6 +796,62 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
                     x.append(r[k])
             row_list.append(x)
         return Matrix_cmr_chr_sparse._from_data(row_list, immutable=False)
+
+    def binary_pivot(self, row, column):
+        cdef Matrix_cmr_chr_sparse result
+        cdef size_t pivot_row = row
+        cdef size_t pivot_column = column
+        cdef CMR_CHRMAT *result_mat
+
+        CMR_CALL(CMRchrmatBinaryPivot(cmr, self._mat, pivot_row, pivot_column, &result_mat))
+        result = Matrix_cmr_chr_sparse._from_cmr(result_mat)
+        return result
+
+    def binary_pivots(self, rows, columns):
+        cdef Matrix_cmr_chr_sparse result
+        cdef size_t* pivot_rows
+        cdef size_t* pivot_columns
+        cdef CMR_CHRMAT *result_mat
+
+        npivots = len(rows)
+        if len(columns) != npivots:
+            raise ValueError("The pivot rows and columns must have the same length")
+
+        for i in range(npivots):
+            pivot_rows[i] = rows[i]
+            pivot_columns[i] = columns[i]
+
+        CMR_CALL(CMRchrmatBinaryPivots(cmr, self._mat, npivots, pivot_rows, pivot_columns, &result_mat))
+        result = Matrix_cmr_chr_sparse._from_cmr(result_mat)
+        return result
+
+    def ternary_pivot(self, row, column):
+        cdef Matrix_cmr_chr_sparse result
+        cdef size_t pivot_row = row
+        cdef size_t pivot_column = column
+        cdef CMR_CHRMAT *result_mat
+
+        CMR_CALL(CMRchrmatTernaryPivot(cmr, self._mat, pivot_row, pivot_column, &result_mat))
+        result = Matrix_cmr_chr_sparse._from_cmr(result_mat)
+        return result
+
+    def ternary_pivots(self, rows, columns):
+        cdef Matrix_cmr_chr_sparse result
+        cdef size_t* pivot_rows
+        cdef size_t* pivot_columns
+        cdef CMR_CHRMAT *result_mat
+
+        cdef size_t npivots = len(rows)
+        if len(columns) != npivots:
+            raise ValueError("The pivot rows and columns must have the same length")
+
+        for i in range(npivots):
+            pivot_rows[i] = rows[i]
+            pivot_columns[i] = columns[i]
+
+        CMR_CALL(CMRchrmatTernaryPivots(cmr, self._mat, npivots, pivot_rows, pivot_columns, &result_mat))
+        result = Matrix_cmr_chr_sparse._from_cmr(result_mat)
+        return result
 
     def is_unimodular(self, time_limit=60.0):
         r"""
@@ -1163,6 +1285,7 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             Graphics object consisting of 21 graphics primitives
         """
         cdef bool result
+        cdef bool support_result
         cdef CMR_GRAPH *digraph = NULL
         cdef CMR_GRAPH_EDGE* forest_arcs = NULL
         cdef CMR_GRAPH_EDGE* coforest_arcs = NULL
@@ -1173,11 +1296,11 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         sig_on()
         try:
             if certificate:
-                CMR_CALL(CMRnetworkTestMatrix(cmr, self._mat, &result, &digraph, &forest_arcs,
+                CMR_CALL(CMRnetworkTestMatrix(cmr, self._mat, &result, &support_result, &digraph, &forest_arcs,
                                               &coforest_arcs, &arcs_reversed, &submatrix, &stats,
                                               time_limit))
             else:
-                CMR_CALL(CMRnetworkTestMatrix(cmr, self._mat, &result, NULL, NULL,
+                CMR_CALL(CMRnetworkTestMatrix(cmr, self._mat, &result, &support_result, NULL, NULL,
                                               NULL, NULL, NULL, &stats, time_limit))
         finally:
             sig_off()
@@ -1203,8 +1326,8 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
                                           series_parallel_ok=True,
                                           check_graphic_minors_planar=False,
                                           complete_tree='if_regular',
-                                          construct_matrices=False,
-                                          construct_transposes=False,
+                                          three_sum_pivot_children=False,
+                                          three_sum_strategy=None,
                                           construct_graphs=False):
         r"""
         Return whether the linear matroid of ``self`` over `\GF{2}` is regular.
@@ -1317,8 +1440,8 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
                               series_parallel_ok=series_parallel_ok,
                               check_graphic_minors_planar=check_graphic_minors_planar,
                               complete_tree=complete_tree,
-                              construct_matrices=construct_matrices,
-                              construct_transposes=construct_transposes,
+                              three_sum_pivot_children=three_sum_pivot_children,
+                              three_sum_strategy=three_sum_strategy,
                               construct_graphs=construct_graphs)
 
         _set_cmr_regular_parameters(&params, kwds)
@@ -1343,8 +1466,8 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
                               series_parallel_ok=True,
                               check_graphic_minors_planar=False,
                               complete_tree='if_regular',
-                              construct_matrices=False,
-                              construct_transposes=False,
+                              three_sum_pivot_children=False,
+                              three_sum_strategy=None,
                               construct_graphs=False):
         r"""
         Return whether ``self`` is a totally unimodular matrix.
@@ -1386,11 +1509,10 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
             Full MatrixSpace of 6 by 14 sparse matrices over Integer Ring
             sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
             sage: MFR2cmr = Matrix_cmr_chr_sparse(MS2, MFR2)
-            sage: MFR2cmr.is_totally_unimodular(certificate=True, construct_matrices=True)
+            sage: MFR2cmr.is_totally_unimodular(certificate=True)
             (False, (None, ((0, 1, 2), (3, 4, 5))))
             sage: result, certificate = MFR2cmr.is_totally_unimodular(certificate=True,
-            ....:                                                     complete_tree=True,
-            ....:                                                     construct_matrices=True)
+            ....:                                                     complete_tree=True)
             sage: result, certificate
             (False, (None, ((0, 1, 2), (3, 4, 5))))
             sage: submatrix = MFR2.matrix_from_rows_and_columns(*certificate[1]); submatrix
@@ -1409,12 +1531,14 @@ cdef class Matrix_cmr_chr_sparse(Matrix_cmr_sparse):
         cdef CMR_MATROID_DEC **pdec = &dec
         cdef CMR_SUBMAT **psubmat = &submat
 
+        if three_sum_pivot_children:
+            raise NotImplementedError
         cdef dict kwds = dict(use_direct_graphicness_test=use_direct_graphicness_test,
                               series_parallel_ok=series_parallel_ok,
                               check_graphic_minors_planar=check_graphic_minors_planar,
                               complete_tree=complete_tree,
-                              construct_matrices=construct_matrices,
-                              construct_transposes=construct_transposes,
+                              three_sum_pivot_children=three_sum_pivot_children,
+                              three_sum_strategy=three_sum_strategy,
                               construct_graphs=construct_graphs)
 
         params.algorithm = CMR_TU_ALGORITHM_DECOMPOSITION
@@ -1466,8 +1590,9 @@ cdef _set_cmr_regular_parameters(CMR_REGULAR_PARAMS *params, dict kwds):
     params.seriesParallel = kwds['series_parallel_ok']
     params.planarityCheck = kwds['check_graphic_minors_planar']
     params.completeTree = kwds['complete_tree'] is True
-    # params.threeSumPivotChildren = _cmr_dec_construct(kwds['construct_matrices'])
-    # params.threeSumStrategy = _cmr_dec_construct(kwds['construct_transposes'])
+    params.threeSumPivotChildren = kwds['three_sum_pivot_children']
+    if kwds['three_sum_strategy'] is not None:
+        params.threeSumStrategy = kwds['three_sum_strategy']
     params.graphs = _cmr_dec_construct(kwds['construct_graphs'])
 
 

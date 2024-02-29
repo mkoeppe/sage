@@ -14,6 +14,8 @@ Seymour's decomposition of totally unimodular matrices and regular matroids
 #                  https://www.gnu.org/licenses/
 # ****************************************************************************
 
+from libc.stdint cimport SIZE_MAX
+
 from sage.libs.cmr.cmr cimport *
 from sage.misc.cachefunc import cached_method
 from sage.rings.integer_ring import ZZ
@@ -68,13 +70,6 @@ cdef class DecompositionNode(SageObject):
             sage: result, certificate = M.is_totally_unimodular(certificate=True)
             sage: result, certificate
             (True, GraphicNode (3×2))
-            sage: certificate.matrix() is None
-            True
-
-            sage: result, certificate = M.is_totally_unimodular(certificate=True,
-            ....:                                               construct_matrices=True)
-            sage: result, certificate
-            (True, GraphicNode (3×2))
             sage: certificate.matrix()
             [ 1  0]
             [-1  1]
@@ -115,8 +110,7 @@ cdef class DecompositionNode(SageObject):
             [ 0  0  1  0]
             [ 0  0 -1  1]
             [ 0  0  0  1]
-            sage: result, certificate = M2cmr.is_totally_unimodular(certificate=True,
-            ....:                                                   construct_matrices=True)
+            sage: result, certificate = M2cmr.is_totally_unimodular(certificate=True)
             sage: result, certificate
             (True, OneSumNode (6×4) with 2 children)
             sage: C = certificate.summands(); C
@@ -128,11 +122,11 @@ cdef class DecompositionNode(SageObject):
         """
         cdef size_t *parent_rows = CMRmatroiddecRowsParent(self._dec)
         cdef size_t *parent_columns = CMRmatroiddecColumnsParent(self._dec)
-        if parent_rows == NULL:
+        if parent_rows == NULL or parent_rows[0] == SIZE_MAX:
             parent_rows_tuple = None
         else:
             parent_rows_tuple = tuple(parent_rows[i] for i in range(CMRmatroiddecNumRows(self._dec)))
-        if parent_columns == NULL:
+        if parent_columns == NULL or parent_columns[0] == SIZE_MAX:
             parent_columns_tuple = None
         else:
             parent_columns_tuple = tuple(parent_columns[i] for i in range(CMRmatroiddecNumColumns(self._dec)))
@@ -153,8 +147,7 @@ cdef class DecompositionNode(SageObject):
             [ 0  0  1  0]
             [ 0  0 -1  1]
             [ 0  0  0  1]
-            sage: result, certificate = M2cmr.is_totally_unimodular(certificate=True,
-            ....:                                                   construct_matrices=True)
+            sage: result, certificate = M2cmr.is_totally_unimodular(certificate=True)
             sage: T = certificate.as_ordered_tree(); T
             OneSumNode (6×4) with 2 children[GraphicNode (3×2)[], GraphicNode (3×2)[]]
             sage: unicode_art(T)
@@ -176,13 +169,18 @@ cdef class DecompositionNode(SageObject):
             sage: M = matrix([[1, 0], [-1, 1], [0, 1]], sparse=True)
             sage: M2MT = block_diagonal_matrix([M, M, M.T], sparse=True)
             sage: M2MTcmr = Matrix_cmr_chr_sparse(M2MT.parent(), M2MT)
-            sage: result, certificate = M2MTcmr.is_totally_unimodular(certificate=True,
-            ....:                                                     construct_matrices=True)
+            sage: result, certificate = M2MTcmr.is_totally_unimodular(certificate=True)
             sage: T = certificate.as_ordered_tree()
             sage: T.plot()                                                              # needs sage.plot
             Graphics object consisting of 8 graphics primitives
         """
         return self.as_ordered_tree().plot(**kwds)
+
+    def is_ternary(self):
+        r"""
+        Returns true iff the decomposition is over `\mathbb{F}_3`.
+        """
+        return <bint> CMRmatroiddecIsTernary(self._dec)
 
     @cached_method
     def _children(self):
@@ -403,6 +401,12 @@ cdef class TwoSumNode(SumNode):
 
 cdef class ThreeSumNode(SumNode):
 
+    def is_distributed_ranks(self):
+        return <bint> CMRmatroiddecThreeSumDistributedRanks(self._dec)
+
+    def is_concentrated_rank(self):
+        return <bint> CMRmatroiddecThreeSumConcentratedRank(self._dec)
+
     def block_matrix_form(self):
         M1, M2 = self.summand_matrices()
         x, y= len(M1.columns()), len(M2.columns())
@@ -449,21 +453,19 @@ cdef class BaseGraphicNode(DecompositionNode):
             sage: result, certificate
             (True, GraphicNode (3×2))
             sage: certificate.forest_edges()
-            ((1, 2), (7, 1))
+            ((1, 2), (7, 1), (12, 7))
         """
-        pass
-        # cdef CMR_GRAPH *graph = CMRmatroiddecGraph(self._dec)
-        # cdef size_t num_edges = CMRmatroiddecGraphSizeForest(self._dec)
-        # cdef CMR_GRAPH_EDGE *edges = CMRmatroiddecGraphForest(self._dec)
-        # return tuple(_sage_edge(graph, edges[i]) for i in range(num_edges))
+        cdef CMR_GRAPH *graph = CMRmatroiddecGraph(self._dec)
+        cdef size_t num_edges = CMRmatroiddecGraphSizeForest(self._dec)
+        cdef CMR_GRAPH_EDGE *edges = CMRmatroiddecGraphForest(self._dec)
+        return tuple(_sage_edge(graph, edges[i]) for i in range(num_edges))
 
     @cached_method
     def coforest_edges(self):
-        pass
-        # cdef CMR_GRAPH *graph = CMRmatroiddecGraph(self._dec)
-        # cdef size_t num_edges = CMRmatroiddecGraphSizeCoforest(self._dec)
-        # cdef CMR_GRAPH_EDGE *edges = CMRmatroiddecGraphCoforest(self._dec)
-        # return tuple(_sage_edge(graph, edges[i]) for i in range(num_edges))
+        cdef CMR_GRAPH *graph = CMRmatroiddecGraph(self._dec)
+        cdef size_t num_edges = CMRmatroiddecGraphSizeCoforest(self._dec)
+        cdef CMR_GRAPH_EDGE *edges = CMRmatroiddecGraphCoforest(self._dec)
+        return tuple(_sage_edge(graph, edges[i]) for i in range(num_edges))
 
 
 cdef class GraphicNode(BaseGraphicNode):
@@ -522,7 +524,30 @@ cdef class SpecialLeafNode(DecompositionNode):
         r"""
 
         """
-        pass
+        cdef CMR_MATROID_DEC_TYPE typ = CMRmatroiddecType(self._dec)
+        import sage.matroids.matroids_catalog as matroids
+        from sage.graphs.graph_generators import graphs
+        from sage.matroids.matroid import Matroid
+
+        if typ == CMR_MATROID_DEC_TYPE_R10:
+            return matroids.named_matroids.R10()
+        if typ == CMR_MATROID_DEC_TYPE_FANO:
+            return matroids.named_matroids.Fano()
+        if typ == CMR_MATROID_DEC_TYPE_FANO_DUAL:
+            return matroids.named_matroids.Fano().dual()
+        if typ == CMR_MATROID_DEC_TYPE_K5:
+            return matroids.CompleteGraphic(5)
+        if typ == CMR_MATROID_DEC_TYPE_K5_DUAL:
+            return matroids.CompleteGraphic(5).dual()
+        if typ == CMR_MATROID_DEC_TYPE_K33:
+            E = 'abcdefghi'
+            G = graphs.CompleteBipartiteGraph(3, 3)
+            return Matroid(groundset=E, graph=G, regular=True)
+        if typ == CMR_MATROID_DEC_TYPE_K33_DUAL:
+            return matroids.named_matroids.K33dual()
+        if typ == CMR_MATROID_DEC_TYPE_DETERMINANT:
+            return '|det| = 2 submatrix'
+        assert False, 'special leaf node with unknown type'
         # cdef int representation_matrix
         # cdef CMR_MATROID_DEC_TYPE typ = CMRdecIsSpecialLeaf(self._dec, &representation_matrix)
         # import sage.matroids.matroids_catalog as matroids
@@ -560,28 +585,68 @@ cdef class SpecialLeafNode(DecompositionNode):
         # cdef CMR_MATROID_DEC_TYPE typ = CMRdecIsSpecialLeaf(self._dec, &representation_matrix)
         # return Matrix_cmr_chr_sparse._from_data(representation_matrix, immutable=False)
 
-cdef _class(CMR_MATROID_DEC *dec):
+
+cdef class PivotsNode(DecompositionNode):
+    def npivots(self):
+        return CMRmatroiddecNumPivots(self._dec)
+
+    @cached_method
+    def pivot_rows_and_columns(self):
+        r"""
+        sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
+        sage: R12 = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 9, 12, sparse=True),
+        ....: [[1, -1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        ....: [0, 0, 0, 1, -1, 0, 0, 0, 1 , 1, 1, 1],
+        ....: [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+        ....: [ 1,  0,  1,  0,  0,  0,  0,  0,  1,  1,  0,  0],
+        ....: [ 0,  1,  1,  0,  0,  0,  0,  0,  0,  0, -1, -1],
+        ....: [ 0,  0,  0,  1,  0,  1,  0,  0,  1,  1,  0,  0],
+        ....: [ 0,  0,  0,  0,  1,  1,  0,  0,  0,  0, -1, -1],
+        ....: [ 0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1,  0],
+        ....: [ 0,  0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1]])
+        sage: result, certificate = R12.is_totally_unimodular(certificate=True)
+        sage: certificate
+        PivotsNode (9×12)
+        sage: certificate.pivot_rows_and_columns()
+        ((1, 8),)
+        """
+        cdef size_t *pivot_rows = CMRmatroiddecPivotRows(self._dec)
+        cdef size_t *pivot_columns = CMRmatroiddecPivotColumns(self._dec)
+
+        return tuple((pivot_rows[i], pivot_columns[i]) for i in range(self.npivots()))
+
+
+cdef class SubmatrixNode(DecompositionNode):
     pass
-    # k = CMRdecIsSum(dec, NULL, NULL)
-    # if k == 1:
-    #     return OneSumNode
-    # if k == 2:
-    #     return TwoSumNode
-    # if k == 3:
-    #     return ThreeSumNode
-    # if CMRdecIsGraphicLeaf(dec):
-    #     if CMRdecIsCographicLeaf(dec):
-    #         return PlanarNode
-    #     return GraphicNode
-    # if CMRdecIsCographicLeaf(dec):
-    #     return CographicNode
-    # if CMRdecIsSpecialLeaf(dec, NULL):
-    #     return SpecialLeafNode
-    # if CMRdecIsSeriesParallelReduction(dec):
-    #     return SeriesParallelReductionNode
-    # if CMRdecIsUnknown(dec):
-    #     return UnknownNode
-    # return ThreeConnectedIrregularNode
+
+cdef _class(CMR_MATROID_DEC *dec):
+    cdef CMR_MATROID_DEC_TYPE typ = CMRmatroiddecType(dec)
+
+    if typ == CMR_MATROID_DEC_TYPE_ONE_SUM:
+        return OneSumNode
+    if typ == CMR_MATROID_DEC_TYPE_TWO_SUM:
+        return TwoSumNode
+    if typ == CMR_MATROID_DEC_TYPE_THREE_SUM:
+        return ThreeSumNode
+    if typ == CMR_MATROID_DEC_TYPE_GRAPH:
+        if typ == CMR_MATROID_DEC_TYPE_COGRAPH:
+            return PlanarNode
+        return GraphicNode
+    if typ == CMR_MATROID_DEC_TYPE_COGRAPH:
+        return CographicNode
+    if typ < -1:
+        return SpecialLeafNode
+    if typ == CMR_MATROID_DEC_TYPE_SERIES_PARALLEL:
+        return SeriesParallelReductionNode
+    if typ == CMR_MATROID_DEC_TYPE_PIVOTS:
+        return PivotsNode
+    if typ == CMR_MATROID_DEC_TYPE_SUBMATRIX:
+        return SubmatrixNode
+    if typ == CMR_MATROID_DEC_TYPE_IRREGULAR:
+        return ThreeConnectedIrregularNode
+    if typ == CMR_MATROID_DEC_TYPE_UNKNOWN:
+        return UnknownNode
+    assert NotImplementedError
 
 
 cdef create_DecompositionNode(CMR_MATROID_DEC *dec, root=None):
