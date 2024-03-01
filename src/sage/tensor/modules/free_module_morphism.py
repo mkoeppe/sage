@@ -61,14 +61,14 @@ class FiniteRankFreeModuleMorphism(Morphism):
       the images of the basis of `M` (see the convention in the example below)
     - ``bases`` -- (default: ``None``) pair (basis_M, basis_N) defining the
       matrix representation, basis_M being a basis of module `M` and
-      basis_N a basis of module `N` ; if None the pair formed by the
+      basis_N a basis of module `N` ; if ``None``, the pair formed by the
       default bases of each module is assumed.
     - ``name`` -- (default: ``None``) string; name given to the homomorphism
     - ``latex_name`` -- (default: ``None``) string; LaTeX symbol to denote the
-      homomorphism; if None, ``name`` will be used.
+      homomorphism; if ``None``, ``name`` will be used.
     - ``is_identity`` -- (default: ``False``) determines whether the
       constructed object is the identity endomorphism; if set to ``True``, then
-      N must be M and the entry ``matrix_rep`` is not used.
+      `N` must be `M` and the entry ``matrix_rep`` is not used.
 
     EXAMPLES:
 
@@ -1314,6 +1314,8 @@ class FiniteRankFreeModuleMorphism(Morphism):
 
 
         """
+        fmodule1, fmodule2, basis1, basis2 = self._modules_and_bases(basis1, basis2)
+        return self._matrix_cmr(basis1, basis2).is_totally_unimodular(**kwds)
 
 
 
@@ -1323,3 +1325,4 @@ class FiniteRankFreeModuleMorphism(Morphism):
         r"""
 
         """
+
