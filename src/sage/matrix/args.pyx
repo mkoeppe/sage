@@ -659,7 +659,7 @@ cdef class MatrixArgs:
             sage: ma = MatrixArgs(M); ma.finalized()
             <MatrixArgs for Full MatrixSpace of 2 by 3 sparse matrices over
              Integer Ring; typ=MATRIX; entries=[0 1 2]
-            [3 4 5]>
+                                               [3 4 5]>
             sage: ma.matrix()
             [0 1 2]
             [3 4 5]
@@ -669,7 +669,7 @@ cdef class MatrixArgs:
             sage: ma = MatrixArgs(M, sparse=False); ma.finalized()
             <MatrixArgs for Full MatrixSpace of 2 by 3 dense matrices over
              Integer Ring; typ=MATRIX; entries=[0 1 2]
-            [3 4 5]>
+                                               [3 4 5]>
             sage: ma.matrix()
             [0 1 2]
             [3 4 5]
@@ -679,7 +679,7 @@ cdef class MatrixArgs:
             sage: ma = MatrixArgs(RDF, M); ma.finalized()
             <MatrixArgs for Full MatrixSpace of 2 by 3 sparse matrices over
              Real Double Field; typ=MATRIX; entries=[0 1 2]
-            [3 4 5]>
+                                                    [3 4 5]>
             sage: ma.matrix(convert=False)
             [0 1 2]
             [3 4 5]

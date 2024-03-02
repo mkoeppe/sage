@@ -1102,28 +1102,38 @@ class MatrixSpace(UniqueRepresentation, Parent):
             sage: V = QQ^(2,3)
             sage: W1 = QQ^(3,4); W2 = QQ^(2,2)
             sage: V.get_action(W1, operator.mul)
-            Left action by Full MatrixSpace of 2 by 3 dense matrices over Rational Field on Full MatrixSpace of 3 by 4 dense matrices over Rational Field
+            Left action
+             by Full MatrixSpace of 2 by 3 dense matrices over Rational Field
+             on Full MatrixSpace of 3 by 4 dense matrices over Rational Field
             sage: V.get_action(W2, operator.mul)
             sage: V.get_action(W1, operator.mul, self_on_left=False)
             sage: V.get_action(W2, operator.mul, self_on_left=False)
-            Left action by Full MatrixSpace of 2 by 2 dense matrices over Rational Field on Full MatrixSpace of 2 by 3 dense matrices over Rational Field
+            Left action
+             by Full MatrixSpace of 2 by 2 dense matrices over Rational Field
+             on Full MatrixSpace of 2 by 3 dense matrices over Rational Field
 
         ::
 
             sage: V2 = QQ^2; V3 = QQ^3
             sage: V.get_action(V3, operator.mul)
-            Left action by Full MatrixSpace of 2 by 3 dense matrices over Rational Field on Vector space of dimension 3 over Rational Field
+            Left action
+             by Full MatrixSpace of 2 by 3 dense matrices over Rational Field
+             on Vector space of dimension 3 over Rational Field
             sage: V.get_action(V2, operator.mul)
             sage: V.get_action(V3, operator.mul, self_on_left=False)
             sage: V.get_action(V2, operator.mul, self_on_left=False)
-            Right action by Full MatrixSpace of 2 by 3 dense matrices over Rational Field on Vector space of dimension 2 over Rational Field
+            Right action
+             by Full MatrixSpace of 2 by 3 dense matrices over Rational Field
+             on Vector space of dimension 2 over Rational Field
 
         ::
 
             sage: V.get_action(ZZ, operator.mul)
-            Right scalar multiplication by Integer Ring on Full MatrixSpace of 2 by 3 dense matrices over Rational Field
+            Right scalar multiplication by Integer Ring
+             on Full MatrixSpace of 2 by 3 dense matrices over Rational Field
             sage: V.get_action(ZZ, operator.mul, self_on_left=False)
-            Left scalar multiplication by Integer Ring on Full MatrixSpace of 2 by 3 dense matrices over Rational Field
+            Left scalar multiplication by Integer Ring
+             on Full MatrixSpace of 2 by 3 dense matrices over Rational Field
         """
         try:
             try:
