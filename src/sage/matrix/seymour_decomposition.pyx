@@ -86,7 +86,25 @@ cdef class DecompositionNode(SageObject):
         return result
 
     @cached_method
-    def parent_rows_and_columns(self):
+    def _parent_rows_and_columns(self):
+        cdef CMR_ELEMENT *parent_rows = CMRmatroiddecRowsParent(self._dec)
+        cdef CMR_ELEMENT *parent_columns = CMRmatroiddecColumnsParent(self._dec)
+
+        if parent_rows == NULL or parent_rows[0] == 0:
+            parent_rows_cmr_tuple = None
+        else:
+            parent_rows_cmr_tuple = tuple(parent_rows[i]
+                                      for i in range(self.nrows()))
+        if parent_columns == NULL or parent_columns[0] == 0:
+            parent_columns_cmr_tuple = None
+        else:
+            parent_columns_cmr_tuple = tuple(parent_columns[i]
+                                         for i in range(self.ncols()))
+
+        return parent_rows_cmr_tuple, parent_columns_cmr_tuple
+
+    @cached_method
+    def parent_rows_and_columns(self, indices_label=False):
         r"""
         EXAMPLES::
 
@@ -119,17 +137,55 @@ cdef class DecompositionNode(SageObject):
             ((0, 1, 2), (0, 1))
             sage: C[1].parent_rows_and_columns()
             ((3, 4, 5), (2, 3))
+
+            sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
+            sage: R12 = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 9, 12, sparse=True),
+            ....: [[1, -1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+            ....: [0, 0, 0, 1, -1, 0, 0, 0, 1 , 1, 1, 1],
+            ....: [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+            ....: [ 1,  0,  1,  0,  0,  0,  0,  0,  1,  1,  0,  0],
+            ....: [ 0,  1,  1,  0,  0,  0,  0,  0,  0,  0, -1, -1],
+            ....: [ 0,  0,  0,  1,  0,  1,  0,  0,  1,  1,  0,  0],
+            ....: [ 0,  0,  0,  0,  1,  1,  0,  0,  0,  0, -1, -1],
+            ....: [ 0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1,  0],
+            ....: [ 0,  0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1]])
+            sage: result, certificate = R12.is_totally_unimodular(certificate=True)
+            sage: C = certificate._children()[0]; C
+            ThreeSumNode (9×12) with 2 children
+            sage: C.parent_rows_and_columns(indices_label=True)
+            ((('r', 0),
+              ('c', 8),
+              ('r', 2),
+              ('r', 3),
+              ('r', 4),
+              ('r', 5),
+              ('r', 6),
+              ('r', 7),
+              ('r', 8)),
+             (('c', 0),
+              ('c', 1),
+              ('c', 2),
+              ('c', 3),
+              ('c', 4),
+              ('c', 5),
+              ('c', 6),
+              ('c', 7),
+              ('r', 1),
+              ('c', 9),
+              ('c', 10),
+              ('c', 11)))
         """
-        cdef CMR_ELEMENT *parent_rows = CMRmatroiddecRowsParent(self._dec)
-        cdef CMR_ELEMENT *parent_columns = CMRmatroiddecColumnsParent(self._dec)
-        if parent_rows == NULL or parent_rows[0] == SIZE_MAX:
+        parent_rows, parent_columns = self._parent_rows_and_columns()
+        if parent_rows is None:
             parent_rows_tuple = None
         else:
-            parent_rows_tuple = tuple(parent_rows[i] for i in range(CMRmatroiddecNumRows(self._dec)))
-        if parent_columns == NULL or parent_columns[0] == SIZE_MAX:
+            parent_rows_tuple = tuple(CMRelement_to_label(parent_rows[i], indices_label)
+                                        for i in range(self.nrows()))
+        if parent_columns is None:
             parent_columns_tuple = None
         else:
-            parent_columns_tuple = tuple(parent_columns[i] for i in range(CMRmatroiddecNumColumns(self._dec)))
+            parent_columns_tuple = tuple(CMRelement_to_label(parent_columns[i], indices_label)
+                                         for i in range(self.ncols()))
 
         return parent_rows_tuple, parent_columns_tuple
 
@@ -182,6 +238,12 @@ cdef class DecompositionNode(SageObject):
         """
         return <bint> CMRmatroiddecIsTernary(self._dec)
 
+    def nchildren(self):
+        r"""
+        Returns the number of children of the node.
+        """
+        return CMRmatroiddecNumChildren(self._dec)
+
     @cached_method
     def _children(self):
         r"""
@@ -221,10 +283,8 @@ cdef class DecompositionNode(SageObject):
             sage: certificate._children()
             ()
         """
-        return tuple(sorted((create_DecompositionNode(CMRmatroiddecChild(self._dec, index),
-                                                self._root or self)
-                             for index in range(CMRmatroiddecNumChildren(self._dec))),
-                            key=lambda node: node.parent_rows_and_columns()))
+        return tuple(create_DecompositionNode(CMRmatroiddecChild(self._dec, index), self._root or self)
+                     for index in range(self.nchildren()))
 
     def _repr_(self):
         nrows, ncols = self.dimensions()
@@ -593,22 +653,24 @@ cdef class PivotsNode(DecompositionNode):
     @cached_method
     def pivot_rows_and_columns(self):
         r"""
-        sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
-        sage: R12 = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 9, 12, sparse=True),
-        ....: [[1, -1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
-        ....: [0, 0, 0, 1, -1, 0, 0, 0, 1 , 1, 1, 1],
-        ....: [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
-        ....: [ 1,  0,  1,  0,  0,  0,  0,  0,  1,  1,  0,  0],
-        ....: [ 0,  1,  1,  0,  0,  0,  0,  0,  0,  0, -1, -1],
-        ....: [ 0,  0,  0,  1,  0,  1,  0,  0,  1,  1,  0,  0],
-        ....: [ 0,  0,  0,  0,  1,  1,  0,  0,  0,  0, -1, -1],
-        ....: [ 0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1,  0],
-        ....: [ 0,  0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1]])
-        sage: result, certificate = R12.is_totally_unimodular(certificate=True)
-        sage: certificate
-        PivotsNode (9×12)
-        sage: certificate.pivot_rows_and_columns()
-        ((1, 8),)
+        EXAMPLES::
+
+            sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
+            sage: R12 = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 9, 12, sparse=True),
+            ....: [[1, -1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+            ....: [0, 0, 0, 1, -1, 0, 0, 0, 1 , 1, 1, 1],
+            ....: [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+            ....: [ 1,  0,  1,  0,  0,  0,  0,  0,  1,  1,  0,  0],
+            ....: [ 0,  1,  1,  0,  0,  0,  0,  0,  0,  0, -1, -1],
+            ....: [ 0,  0,  0,  1,  0,  1,  0,  0,  1,  1,  0,  0],
+            ....: [ 0,  0,  0,  0,  1,  1,  0,  0,  0,  0, -1, -1],
+            ....: [ 0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1,  0],
+            ....: [ 0,  0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1]])
+            sage: result, certificate = R12.is_totally_unimodular(certificate=True)
+            sage: certificate
+            PivotsNode (9×12)
+            sage: certificate.pivot_rows_and_columns()
+            ((1, 8),)
         """
         cdef size_t *pivot_rows = CMRmatroiddecPivotRows(self._dec)
         cdef size_t *pivot_columns = CMRmatroiddecPivotColumns(self._dec)
@@ -618,6 +680,7 @@ cdef class PivotsNode(DecompositionNode):
 
 cdef class SubmatrixNode(DecompositionNode):
     pass
+
 
 cdef _class(CMR_MATROID_DEC *dec):
     cdef CMR_MATROID_DEC_TYPE typ = CMRmatroiddecType(dec)
@@ -665,3 +728,20 @@ cdef create_DecompositionNode(CMR_MATROID_DEC *dec, root=None):
     cdef DecompositionNode result = <DecompositionNode> _class(dec)()
     result._set_dec(dec, root)
     return result
+
+
+cdef CMRelement_to_label(CMR_ELEMENT element, indices_label=False):
+    r"""
+    """
+    if not CMRelementIsValid(element):
+        raise ValueError('CMRelement index not valid')
+    if CMRelementIsRow(element):
+        if indices_label:
+            return ('r',CMRelementToRowIndex(element))
+        else:
+            return CMRelementToRowIndex(element)
+    else:
+        if indices_label:
+            return ('c', CMRelementToColumnIndex(element))
+        else:
+            return CMRelementToColumnIndex(element)
