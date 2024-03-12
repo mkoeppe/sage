@@ -173,7 +173,7 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
             (1, 2, 3)
             sage: phi(V.1)
             (4, 5, 6)
-            sage: phi(V.0  - 1/4*V.1)
+            sage: phi(V.0 - 1/4*V.1)
             (0, 3/4, 3/2)
 
         We restrict ``phi`` to ``W`` and compute the image of an element::
@@ -342,14 +342,14 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
             Vector space morphism represented by the matrix:
             [-1  3]
             [ 1 -2]
-            Domain: Vector space of degree 3 and dimension 2 over Rational Field
-            Basis matrix:
-            [1 0 0]
-            [0 0 1]
+            Domain:   Vector space of degree 3 and dimension 2 over Rational Field
+                      Basis matrix:
+                      [1 0 0]
+                      [0 0 1]
             Codomain: Vector space of degree 4 and dimension 2 over Rational Field
-            Basis matrix:
-            [1 0 0 0]
-            [0 0 0 1]
+                      Basis matrix:
+                      [1 0 0 0]
+                      [0 0 0 1]
             sage: inv(y) == x
             True
 
@@ -477,7 +477,7 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
 
             sage: V = QQ^3
             sage: E = V.endomorphism_ring()
-            sage: phi = E(Matrix(QQ,3,range(9))) ; phi
+            sage: phi = E(Matrix(QQ, 3, range(9))); phi
             Vector space morphism represented by the matrix:
             [0 1 2]
             [3 4 5]
@@ -1377,9 +1377,10 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
 
     def restrict_domain(self, sub):
         """
-        Restrict this matrix morphism to a subspace sub of the domain. The
-        subspace sub should have a basis() method and elements of the basis
-        should be coercible into domain.
+        Restrict this matrix morphism to a subspace ``sub`` of the domain.
+
+        The subspace ``sub`` should have a ``basis()`` method and elements
+        of the basis should be coercible into domain.
 
         The resulting morphism has the same codomain as before, but a new
         domain.
@@ -1390,8 +1391,8 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
             sage: phi.restrict_domain(V.span([V.0]))
             Free module morphism defined by the matrix
             [3 0]
-            Domain: Free module of degree 2 and rank 1 over Integer Ring
-            Echelon ...
+            Domain:   Free module of degree 2 and rank 1 over Integer Ring
+                      Echelon ...
             Codomain: Ambient free module of rank 2 over the principal ideal domain ...
             sage: phi.restrict_domain(V.span([V.1]))
             Free module morphism defined by the matrix
@@ -1426,41 +1427,41 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
 
     def restrict_codomain(self, sub):
         """
-        Restrict this matrix morphism to a subspace sub of the codomain.
+        Restrict this matrix morphism to a subspace ``sub`` of the codomain.
 
         The resulting morphism has the same domain as before, but a new
         codomain.
 
         EXAMPLES::
 
-            sage: V = ZZ^2; phi = V.hom([4*(V.0+V.1),0])
+            sage: V = ZZ^2; phi = V.hom([4*(V.0+V.1), 0])
             sage: W = V.span([2*(V.0+V.1)])
             sage: phi
             Free module morphism defined by the matrix
             [4 4]
             [0 0]
-            Domain: Ambient free module of rank 2 over the principal ideal domain ...
+            Domain:   Ambient free module of rank 2 over the principal ideal domain ...
             Codomain: Ambient free module of rank 2 over the principal ideal domain ...
             sage: psi = phi.restrict_codomain(W); psi
             Free module morphism defined by the matrix
             [2]
             [0]
-            Domain: Ambient free module of rank 2 over the principal ideal domain ...
+            Domain:   Ambient free module of rank 2 over the principal ideal domain ...
             Codomain: Free module of degree 2 and rank 1 over Integer Ring
-            Echelon ...
+                      Echelon ...
             sage: phi2 = phi.side_switch(); phi2.restrict_codomain(W)
             Free module morphism defined as left-multiplication by the matrix
             [2 0]
-            Domain: Ambient free module of rank 2 over the principal ideal domain Integer Ring
+            Domain:   Ambient free module of rank 2 over the principal ideal domain ...
             Codomain: Free module of degree 2 and rank 1 over Integer Ring
-            Echelon ...
+                      Echelon ...
 
         An example in which the codomain equals the full ambient space, but
         with a different basis::
 
             sage: V = QQ^2
-            sage: W = V.span_of_basis([[1,2],[3,4]])
-            sage: phi = V.hom(matrix(QQ,2,[1,0,2,0]),W)
+            sage: W = V.span_of_basis([[1,2], [3,4]])
+            sage: phi = V.hom(matrix(QQ, 2, [1,0,2,0]), W)
             sage: phi.matrix()
             [1 0]
             [2 0]
@@ -1480,10 +1481,10 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
             Vector space morphism represented by the matrix:
             [1]
             [2]
-            Domain: Vector space of dimension 2 over Rational Field
+            Domain:   Vector space of dimension 2 over Rational Field
             Codomain: Vector space of degree 2 and dimension 1 over Rational Field
-            Basis matrix:
-            [1 2]
+                      Basis matrix:
+                      [1 2]
             sage: psi(V.0)
             (1, 2)
             sage: psi(V.1)
@@ -1509,9 +1510,9 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
 
     def restrict(self, sub):
         """
-        Restrict this matrix morphism to a subspace sub of the domain.
+        Restrict this matrix morphism to a subspace ``sub`` of the domain.
 
-        The codomain and domain of the resulting matrix are both sub.
+        The codomain and domain of the resulting matrix are both ``sub``.
 
         EXAMPLES::
 
@@ -1519,12 +1520,12 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
             sage: phi.restrict(V.span([V.0]))
             Free module morphism defined by the matrix
             [3]
-            Domain: Free module of degree 2 and rank 1 over Integer Ring
-            Echelon ...
+            Domain:   Free module of degree 2 and rank 1 over Integer Ring
+                      Echelon ...
             Codomain: Free module of degree 2 and rank 1 over Integer Ring
-            Echelon ...
+                      Echelon ...
 
-            sage: V = (QQ^2).span_of_basis([[1,2],[3,4]])
+            sage: V = (QQ^2).span_of_basis([[1,2], [3,4]])
             sage: phi = V.hom([V.0+V.1, 2*V.1])
             sage: phi(V.1) == 2*V.1
             True
@@ -1536,12 +1537,12 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
             sage: psi = phi.restrict(W); psi
             Vector space morphism represented by the matrix:
             [2]
-            Domain: Vector space of degree 2 and dimension 1 over Rational Field
-            Basis matrix:
-            [  1 4/3]
+            Domain:   Vector space of degree 2 and dimension 1 over Rational Field
+                      Basis matrix:
+                      [  1 4/3]
             Codomain: Vector space of degree 2 and dimension 1 over Rational Field
-            Basis matrix:
-            [  1 4/3]
+                      Basis matrix:
+                      [  1 4/3]
             sage: psi.domain() == W
             True
             sage: psi(W.0) == 2*W.0
@@ -1552,31 +1553,31 @@ class MatrixMorphism_abstract(sage.categories.morphism.Morphism):
             sage: V = ZZ^3
             sage: h1 = V.hom([V.0, V.1+V.2, -V.1+V.2])
             sage: h2 = h1.side_switch()
-            sage: SV = V.span([2*V.1,2*V.2])
+            sage: SV = V.span([2*V.1, 2*V.2])
             sage: h1.restrict(SV)
             Free module morphism defined by the matrix
             [ 1  1]
             [-1  1]
-            Domain: Free module of degree 3 and rank 2 over Integer Ring
-            Echelon basis matrix:
-            [0 2 0]
-            [0 0 2]
+            Domain:   Free module of degree 3 and rank 2 over Integer Ring
+                      Echelon basis matrix:
+                      [0 2 0]
+                      [0 0 2]
             Codomain: Free module of degree 3 and rank 2 over Integer Ring
-            Echelon basis matrix:
-            [0 2 0]
-            [0 0 2]
+                      Echelon basis matrix:
+                      [0 2 0]
+                      [0 0 2]
             sage: h2.restrict(SV)
             Free module morphism defined as left-multiplication by the matrix
             [ 1 -1]
             [ 1  1]
-            Domain: Free module of degree 3 and rank 2 over Integer Ring
-            Echelon basis matrix:
-            [0 2 0]
-            [0 0 2]
+            Domain:   Free module of degree 3 and rank 2 over Integer Ring
+                      Echelon basis matrix:
+                      [0 2 0]
+                      [0 0 2]
             Codomain: Free module of degree 3 and rank 2 over Integer Ring
-            Echelon basis matrix:
-            [0 2 0]
-            [0 0 2]
+                      Echelon basis matrix:
+                      [0 2 0]
+                      [0 0 2]
         """
         if not self.is_endomorphism():
             raise ArithmeticError("matrix morphism must be an endomorphism")
@@ -1621,7 +1622,7 @@ class MatrixMorphism(MatrixMorphism_abstract):
 
             sage: from sage.modules.matrix_morphism import MatrixMorphism
             sage: T = End(ZZ^3)
-            sage: M = MatrixSpace(ZZ,3)
+            sage: M = MatrixSpace(ZZ, 3)
             sage: I = M.identity_matrix()
             sage: A = MatrixMorphism(T, I)
             sage: loads(A.dumps()) == A
@@ -1710,10 +1711,10 @@ class MatrixMorphism(MatrixMorphism_abstract):
 
             sage: V1 = QQ^2
             sage: V2 = QQ^3
-            sage: phi = V1.hom(Matrix([[1,2,3],[4,5,6]]),V2)
+            sage: phi = V1.hom(Matrix([[1,2,3], [4,5,6]]),V2)
             sage: phi.is_injective()
             True
-            sage: psi = V2.hom(Matrix([[1,2],[3,4],[5,6]]),V1)
+            sage: psi = V2.hom(Matrix([[1,2], [3,4], [5,6]]),V1)
             sage: psi.is_injective()
             False
 
@@ -1735,10 +1736,10 @@ class MatrixMorphism(MatrixMorphism_abstract):
 
             sage: V1 = QQ^2
             sage: V2 = QQ^3
-            sage: phi = V1.hom(Matrix([[1,2,3],[4,5,6]]), V2)
+            sage: phi = V1.hom(Matrix([[1,2,3], [4,5,6]]), V2)
             sage: phi.is_surjective()
             False
-            sage: psi = V2.hom(Matrix([[1,2],[3,4],[5,6]]), V1)
+            sage: psi = V2.hom(Matrix([[1,2], [3,4], [5,6]]), V1)
             sage: psi.is_surjective()
             True
 
@@ -1749,7 +1750,8 @@ class MatrixMorphism(MatrixMorphism_abstract):
             sage: B = R^2
             sage: H = A.hom([B([x^2-1, 1]), B([x^2, 1])])
             sage: H.image()
-            Free module of degree 2 and rank 2 over Univariate Polynomial Ring in x over Rational Field
+            Free module of degree 2 and rank 2 over
+             Univariate Polynomial Ring in x over Rational Field
             Echelon basis matrix:
             [ 1  0]
             [ 0 -1]
@@ -1759,7 +1761,7 @@ class MatrixMorphism(MatrixMorphism_abstract):
         This tests if :trac:`11552` is fixed. ::
 
             sage: V = ZZ^2
-            sage: m = matrix(ZZ, [[1,2],[0,2]])
+            sage: m = matrix(ZZ, [[1,2], [0,2]])
             sage: phi = V.hom(m, V)
             sage: phi.lift(vector(ZZ, [0, 1]))
             Traceback (most recent call last):
