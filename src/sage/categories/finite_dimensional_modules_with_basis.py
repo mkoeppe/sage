@@ -9,7 +9,9 @@ Finite dimensional modules with basis
 #                  http://www.gnu.org/licenses/
 # *****************************************************************************
 
+import functools
 import operator
+
 from sage.categories.category_with_axiom import CategoryWithAxiom_over_base_ring
 from sage.categories.fields import Fields
 from sage.categories.homsets import HomsetsCategory
@@ -914,9 +916,7 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
                 method = matrix.is_unimodular
             except AttributeError:
                 return NotImplemented
-            def is_unimodular(**kwds):
-                return matrix.is_unimodular(**kwds)
-            return is_unimodular
+            return matrix.is_unimodular
 
         @lazy_attribute
         def is_totally_unimodular(self):
@@ -947,6 +947,8 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
                 method = matrix.is_unimodular
             except AttributeError:
                 return NotImplemented
+
+            @functools.wraps(matrix.is_totally_unimodular)
             def is_totally_unimodular(*, certificate=False, **kwds):
                 if not certificate:
                     return matrix.is_totally_unimodular(**kwds)
@@ -956,6 +958,7 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
                                                     column_keys=column_keys,
                                                     row_keys=row_keys,
                                                     **kwds)
+
             return is_totally_unimodular
 
     class TensorProducts(TensorProductsCategory):
