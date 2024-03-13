@@ -15,6 +15,7 @@ from sage.categories.fields import Fields
 from sage.categories.homsets import HomsetsCategory
 from sage.categories.tensor import TensorProductsCategory
 from sage.misc.cachefunc import cached_method
+from sage.misc.lazy_attribute import lazy_attribute
 
 
 class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
@@ -880,6 +881,82 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
             C = self.codomain()
             return C.submodule(self.image_basis(), already_echelonized=True,
                                category=self.category_for())
+
+        @cached_method
+        def _matrix_cmr(self):
+            from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
+            from sage.matrix.matrix_space import MatrixSpace
+            M = self.matrix()
+            MS = MatrixSpace(self.base_ring(), M.nrows(), M.ncols(), sparse=True)
+            return Matrix_cmr_chr_sparse(MS, M)
+
+        @lazy_attribute
+        def is_unimodular(self):
+            r"""
+            Return whether ``self`` is a unimodular morphism.
+
+            This does not depend on the choice of bases for
+            domain and codomain.
+
+            EXAMPLES::
+
+                sage: M = matrix(ZZ, [[1, 0, 0], [0, 1, 0]],
+                ....:            column_keys=['a', 'b', 'c'],
+                ....:            row_keys=['v', 'w']); M
+                sage: M.is_unimodular()                         # optional - sage.libs.cmr
+                True
+            """
+            try:
+                matrix = self._matrix_cmr()
+            except ImportError:
+                matrix = self.matrix()
+            try:
+                method = matrix.is_unimodular
+            except AttributeError:
+                return NotImplemented
+            def is_unimodular(**kwds):
+                return matrix.is_unimodular(**kwds)
+            return is_unimodular
+
+        @lazy_attribute
+        def is_totally_unimodular(self):
+            r"""
+            Return whether the matrix of ``self`` is totally unimodular.
+
+            This depends on the choice of bases for domain and codomain.
+
+            EXAMPLES::
+
+                sage: # optional - sage.libs.cmr
+                sage: M = matrix(ZZ, [[1, 0], [-1, 1], [0, 1]],
+                ....:            column_keys=['a', 'b'],
+                ....:            row_keys=['u', 'v', 'w']); M
+                sage: M.is_totally_unimodular()
+                True
+                sage: result, certificate = M.is_totally_unimodular(certificate=True)
+                sage: result, certificate
+                (True, GraphicNode (3×2))
+                sage: certificate.graph()
+                FIXME
+            """
+            try:
+                matrix = self._matrix_cmr()
+            except ImportError:
+                matrix = self.matrix()
+            try:
+                method = matrix.is_unimodular
+            except AttributeError:
+                return NotImplemented
+            def is_totally_unimodular(*, certificate=False, **kwds):
+                if not certificate:
+                    return matrix.is_totally_unimodular(**kwds)
+                column_keys = self.domain().basis().keys()
+                row_keys = self.codomain().basis().keys()
+                return matrix.is_totally_unimodular(certificate=True,
+                                                    column_keys=column_keys,
+                                                    row_keys=row_keys,
+                                                    **kwds)
+            return is_totally_unimodular
 
     class TensorProducts(TensorProductsCategory):
 
