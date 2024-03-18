@@ -18,6 +18,7 @@ from libc.stdint cimport SIZE_MAX
 
 from sage.libs.cmr.cmr cimport *
 from sage.misc.cachefunc import cached_method
+from sage.rings.integer cimport Integer
 from sage.rings.integer_ring import ZZ
 from sage.structure.sage_object cimport SageObject
 
@@ -38,11 +39,11 @@ cdef class DecompositionNode(SageObject):
         if self._root is None or self._root is self:
             if self._dec != NULL:
                 # We own it, so we have to free it.
-                CMR_CALL(CMRmatroiddecFree(cmr, &self._dec))
+                CMR_CALL(CMRmatroiddecRelease(cmr, &self._dec))
         self._dec = dec
         self._root = root
 
-    cdef _set_row_keys(self, row_keys):
+    def _set_row_keys(self, row_keys):
         """
         Set the row keys with consistency checking: if the
         value was previously set, it must remain the same.
@@ -55,7 +56,7 @@ cdef class DecompositionNode(SageObject):
                              f"but got {row_keys}")
         self._row_keys = row_keys
 
-    cdef _set_column_keys(self, column_keys):
+    def _set_column_keys(self, column_keys):
         """
         Set the column keys with consistency checking: if the
         value was previously set, it must remain the same.
@@ -129,6 +130,23 @@ cdef class DecompositionNode(SageObject):
         """
         return self._column_keys
 
+    def parent_indices(self):
+        r"""
+        """
+        return self._parent_indices
+
+    def set_default_keys(self):
+        row_keys = self.row_keys()
+        column_keys = self.column_keys()
+        if row_keys is None or column_keys is None:
+            row_keys = tuple(ElementKey(f"r{i}") for i in range(self.nrows()))
+            column_keys  = tuple(ElementKey(f"c{i}") for i in range(self.ncols()))
+        elif not isinstance(row_keys[0], ElementKey):
+            row_keys = tuple(ElementKey(key) for key in row_keys)
+            column_keys  = tuple(ElementKey(key) for key in column_keys)
+        self._row_keys = row_keys
+        self._column_keys = column_keys
+
     @cached_method
     def morphism(self):
         r"""
@@ -137,40 +155,7 @@ cdef class DecompositionNode(SageObject):
         return MatrixArgs(self.matrix(), MatrixSpace(ZZ, self.row_keys(), self.column_keys())).element()
 
     @cached_method
-    def _parent_rows_and_columns(self):
-        cdef CMR_ELEMENT *parent_rows = CMRmatroiddecRowsParent(self._dec)
-        cdef CMR_ELEMENT *parent_columns = CMRmatroiddecColumnsParent(self._dec)
-
-        if parent_rows == NULL or parent_rows[0] == 0:
-            parent_rows_cmr_tuple = None
-        else:
-            parent_rows_cmr_tuple = tuple(parent_rows[i]
-                                      for i in range(self.nrows()))
-        if parent_columns == NULL or parent_columns[0] == 0:
-            parent_columns_cmr_tuple = None
-        else:
-            parent_columns_cmr_tuple = tuple(parent_columns[i]
-                                         for i in range(self.ncols()))
-
-        return parent_rows_cmr_tuple, parent_columns_cmr_tuple
-
-    # def ancestor_rows_and_columns(self, ancestor, use_keys=False):
-    #     r"""
-
-    #     INPUT:
-
-    #     - ``use_keys`` -- if ``True``, return the answer
-
-    #     OUTPUT: tuple ``(row_keys, column_keys)``
-
-
-
-    #     """
-    #     if ancestor is self:
-    #         pass
-
-    @cached_method
-    def parent_rows_and_columns(self, indices_label=False):
+    def parent_rows_and_columns(self):
         r"""
         EXAMPLES::
 
@@ -182,7 +167,9 @@ cdef class DecompositionNode(SageObject):
             [ 0  1]
             sage: result, certificate = M.is_totally_unimodular(certificate=True)
             sage: certificate.parent_rows_and_columns()
-            (None, None)
+            Traceback (most recent call last):
+            ...
+            ValueError: This is probably a root node. No keys or indices stored.
 
             sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
             sage: M = matrix([[1, 0], [-1, 1], [0, 1]], sparse=True)
@@ -215,45 +202,26 @@ cdef class DecompositionNode(SageObject):
             ....: [ 0,  0,  0,  0,  1,  1,  0,  0,  0,  0, -1, -1],
             ....: [ 0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1,  0],
             ....: [ 0,  0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1]])
-            sage: result, certificate = R12.is_totally_unimodular(certificate=True)
+            sage: result, certificate = R12.is_totally_unimodular(certificate=True,
+            ....:                           row_keys=['r1', 'r2', 'r3', 'r4', 'r5',
+            ....:                                     'r6', 'r7', 'r8', 'r9'],
+            ....:                           column_keys=['a','b','c','d','e','f',
+            ....:                                        'g','h','i','j','k','l'])
             sage: C = certificate._children()[0]; C
             ThreeSumNode (9×12) with 2 children
-            sage: C.parent_rows_and_columns(indices_label=True)
-            ((('r', 0),
-              ('c', 8),
-              ('r', 2),
-              ('r', 3),
-              ('r', 4),
-              ('r', 5),
-              ('r', 6),
-              ('r', 7),
-              ('r', 8)),
-             (('c', 0),
-              ('c', 1),
-              ('c', 2),
-              ('c', 3),
-              ('c', 4),
-              ('c', 5),
-              ('c', 6),
-              ('c', 7),
-              ('r', 1),
-              ('c', 9),
-              ('c', 10),
-              ('c', 11)))
+            sage: C.parent_rows_and_columns()
+            ((r1, i, r3, r4, r5, r6, r7, r8, r9), (a, b, c, d, e, f, g, h, r2, j, k, l))
         """
-        parent_rows, parent_columns = self._parent_rows_and_columns()
-        if parent_rows is None:
-            parent_rows_tuple = None
+        if self._row_keys is None or self._column_keys is None:
+            raise ValueError("This is probably a root node. No keys or indices stored.")
+        if isinstance(self.row_keys()[0], ElementKey):
+            return self.ancestor_rows_and_columns()
         else:
-            parent_rows_tuple = tuple(CMRelement_to_label(parent_rows[i], indices_label)
-                                        for i in range(self.nrows()))
-        if parent_columns is None:
-            parent_columns_tuple = None
-        else:
-            parent_columns_tuple = tuple(CMRelement_to_label(parent_columns[i], indices_label)
-                                         for i in range(self.ncols()))
+            return self.parent_indices()
 
-        return parent_rows_tuple, parent_columns_tuple
+    @cached_method
+    def ancestor_rows_and_columns(self):
+        return self.row_keys(), self.column_keys()
 
     def as_ordered_tree(self):
         r"""
@@ -312,7 +280,9 @@ cdef class DecompositionNode(SageObject):
 
     cdef _CMRelement_to_key(self, CMR_ELEMENT element):
         if not CMRelementIsValid(element):
-            raise ValueError('CMRelement index not valid')
+            raise ValueError('CMRelement index not valid. Extra row or column is detected.')
+        if self.row_keys() is None or self.column_keys() is None:
+            raise ValueError('row_keys and column_keys are required')
         if CMRelementIsRow(element):
             return self.row_keys()[CMRelementToRowIndex(element)]
         else:
@@ -322,19 +292,41 @@ cdef class DecompositionNode(SageObject):
         row_keys = self.row_keys()
         column_keys = self.column_keys()
         cdef CMR_MATROID_DEC *child_dec = CMRmatroiddecChild(self._dec, index)
-        cdef CMR_ELEMENT *parent_rows = CMRmatroiddecRowsParent(child_dec)
-        cdef CMR_ELEMENT *parent_columns = CMRmatroiddecColumnsParent(child_dec)
+        cdef CMR_ELEMENT *parent_rows = CMRmatroiddecChildRowsToParent(self._dec, index)
+        cdef CMR_ELEMENT *parent_columns = CMRmatroiddecChildColumnsToParent(self._dec, index)
+        child_nrows = CMRmatroiddecNumRows(child_dec)
+        child_ncols = CMRmatroiddecNumColumns(child_dec)
 
-        child = create_DecompositionNode(child_dec, root=self._root or self)
+        if parent_rows == NULL or all(parent_rows[i] == 0 for i in range(child_nrows)):
+            raise ValueError(f"Child {index} does not have parents rows")
+        parent_rows_tuple = tuple(parent_rows[i] for i in range(child_nrows))
+
+        if parent_columns == NULL or all(parent_columns[i] == 0 for i in range(child_ncols)):
+            raise ValueError(f"Child {index} does not have parents columns")
+        parent_columns_tuple = tuple(parent_columns[i] for i in range(child_ncols))
 
         if row_keys is not None and column_keys is not None:
-            child_row_keys = tuple(self._CMRelement_to_key(parent_rows[i])
-                                   for i in range(child.nrows()))
-            child_column_keys = tuple(self._CMRelement_to_key(parent_columns[i])
-                                      for i in range(child.ncols()))
-            child._set_row_keys(child_row_keys)
-            child._set_column_keys(child_column_keys)
-
+            child_row_keys = tuple(self._CMRelement_to_key(element)
+                                   for element in parent_rows_tuple)
+            child_column_keys = tuple(self._CMRelement_to_key(element)
+                                      for element in parent_columns_tuple)
+            child = create_DecompositionNode(child_dec, root=self._root or self,
+                                             row_keys=child_row_keys,
+                                             column_keys=child_column_keys)
+            parent_row_indices = tuple(CMRelementToRowIndex(element)
+                                    for element in parent_rows_tuple)
+            parent_column_indices = tuple(CMRelementToColumnIndex(element)
+                                        for element in parent_columns_tuple)
+            child._parent_indices = parent_row_indices, parent_column_indices
+        else:
+            child_row_keys = tuple(CMRelementToRowIndex(element)
+                                   for element in parent_rows_tuple)
+            child_column_keys = tuple(CMRelementToColumnIndex(element)
+                                      for element in parent_columns_tuple)
+            child = create_DecompositionNode(child_dec, root=self._root or self,
+                                             row_keys=child_row_keys,
+                                             column_keys=child_column_keys)
+            child._parent_indices = child_row_keys, child_column_keys
         return child
 
     @cached_method
@@ -342,7 +334,8 @@ cdef class DecompositionNode(SageObject):
         r"""
         Return a tuple of the children.
 
-        The children are sorted by their :meth:`parent_rows_and_columns`.
+        The children are sorted by the inherited ordering from cmr, which
+        is their appreance in the parent.
 
         In the case of :class:`SumNode`, this is the same as :meth:`~SumNode.summands`.
 
@@ -637,9 +630,278 @@ cdef class ThreeSumNode(SumNode):
 
     @cached_method
     def _children(self):
-        # to be overridden
-        return tuple(self._create_child_node(index)
-                     for index in range(self.nchildren()))
+        r"""
+        TESTS:
+
+        This is test ``WideWideR12`` and ``MixedMixedR12`` in CMR's ``test_tu.cpp``::
+
+            sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
+            sage: R12 = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 6, 6, sparse=True),
+            ....: [[1,0,1,1,0,0],[0,1,1,1,0,0],[1,0,1,0,1,1],
+            ....: [0,-1,0,-1,1,1],[1,0,1,0,1,0],[0,-1,0,-1,0,1]])
+            sage: result, certificate = R12.is_totally_unimodular(certificate=True,
+            ....:                           three_sum_strategy="Wide_Wide",
+            ....:                           row_keys=range(6),
+            ....:                           column_keys='abcdef')
+            sage: C = certificate._children()[0]
+            sage: C.parent_rows_and_columns()
+            ((0, 1, 2, 3, a, 5), (4, b, c, d, e, f))
+            sage: C1, C2 = C._children()
+            sage: C1.matrix()
+            [ 0  0  1 -1 -1]
+            [ 1  1  1  0  0]
+            [ 0  1  0  1  1]
+            [-1  0 -1  0  1]
+            sage: C2.matrix()
+            [ 1  0  1 -1  0]
+            [ 0  0  1  0  1]
+            [-1 -1  0  1  1]
+            [-1 -1  0  0  1]
+            sage: C1.parent_rows_and_columns()
+            ((0, 1, a, 3), (b, c, d, e, +3+e))
+            sage: C1.parent_indices()
+            ((0, 1, 4, 3), (1, 2, 3, 4, 4))
+            sage: C2.parent_rows_and_columns()
+            ((0, 2, 3, 5), (+0+d, d, 4, e, f))
+            sage: C2.parent_indices()
+            ((0, 2, 3, 5), (3, 3, 0, 4, 5))
+
+            sage: from sage.matrix.matrix_cmr_sparse import Matrix_cmr_chr_sparse
+            sage: R12_large = Matrix_cmr_chr_sparse(MatrixSpace(ZZ, 9, 12, sparse=True),
+            ....: [[1, -1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+            ....: [0, 0, 0, 1, -1, 0, 0, 0, 1 , 1, 1, 1],
+            ....: [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+            ....: [ 1,  0,  1,  0,  0,  0,  0,  0,  1,  1,  0,  0],
+            ....: [ 0,  1,  1,  0,  0,  0,  0,  0,  0,  0, -1, -1],
+            ....: [ 0,  0,  0,  1,  0,  1,  0,  0,  1,  1,  0,  0],
+            ....: [ 0,  0,  0,  0,  1,  1,  0,  0,  0,  0, -1, -1],
+            ....: [ 0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1,  0],
+            ....: [ 0,  0,  0,  0,  0,  0,  0,  1,  0,  1,  0,  1]])
+            sage: result, certificate = R12_large.is_totally_unimodular(certificate=True,
+            ....:                                 three_sum_strategy="Wide_Wide",
+            ....:                                 row_keys=range(9),
+            ....:                                 column_keys='abcdefghijkl')
+            sage: C = certificate._children()[0]; C
+            ThreeSumNode (9×12) with 2 children
+            sage: C1, C2 = C._children()
+            sage: C1.matrix()
+            [ 0  0  1  1  1  1  1]
+            [ 1  1  0  0  0 -1 -1]
+            [ 1  0 -1  0 -1 -1 -1]
+            [ 0  1  1  0  1  0  0]
+            [ 0  0  0 -1 -1  0 -1]
+            sage: C2.matrix()
+            [ 1  0  0  0  0  1 -1  0 -1]
+            [ 0  0  1 -1  0 -1  1  0  1]
+            [-1 -1  1  0  1 -1  1  0  1]
+            [-1 -1  0  1  1  0  0  0  0]
+            [-1 -1  0  0  0  0  1  1  1]
+            [-1 -1  0  0  0  0  1  1  0]
+            sage: C.row_keys()
+            (0, i, 2, 3, 4, 5, 6, 7, 8)
+            sage: C.column_keys()
+            (a, b, c, d, e, f, g, h, 1, j, k, l)
+            sage: C1.parent_rows_and_columns()
+            ((i, 2, 7, 8, 3), (g, h, j, k, l, d, -3+d))
+            sage: C2.parent_rows_and_columns()
+            ((i, 0, 3, 4, 5, 6), (+i+k, k, a, b, c, d, e, f, 1))
+
+            sage: result, certificate = R12.is_totally_unimodular(certificate=True,
+            ....:                           three_sum_strategy="Mixed_Mixed")
+            sage: C1, C2 = certificate._children()
+            sage: C1.matrix()
+            [ 1  0  1  1  0]
+            [ 0  1  1  1  0]
+            [ 1  0  1  0  1]
+            [ 0 -1  0 -1  1]
+            sage: C2.matrix()
+            [ 1  1  0  0]
+            [ 1  0  1  1]
+            [ 0 -1  1  1]
+            [ 1  0  1  0]
+            [ 0 -1  0  1]
+            sage: C1.parent_rows_and_columns()
+            ((r0, r1, r2, r3), (c0, c1, c2, c3, +r2+r3))
+            sage: C2.parent_rows_and_columns()
+            ((+c0+c3, r2, r3, r4, r5), (c0, c3, c4, c5))
+
+            sage: result, certificate = R12.is_totally_unimodular(certificate=True,
+            ....:                           three_sum_strategy="Mixed_Mixed",
+            ....:                           row_keys=range(6),
+            ....:                           column_keys='abcdef')
+            sage: C1, C2 = certificate._children()
+            sage: C1.matrix()
+            [ 1  0  1  1  0]
+            [ 0  1  1  1  0]
+            [ 1  0  1  0  1]
+            [ 0 -1  0 -1  1]
+            sage: C2.matrix()
+            [ 1  1  0  0]
+            [ 1  0  1  1]
+            [ 0 -1  1  1]
+            [ 1  0  1  0]
+            [ 0 -1  0  1]
+            sage: C1.parent_rows_and_columns()
+            ((0, 1, 2, 3), (a, b, c, d, +2+3))
+            sage: C2.parent_rows_and_columns()
+            ((+a+d, 2, 3, 4, 5), (a, d, e, f))
+        """
+        if self.nchildren() != 2:
+            raise ValueError(f"ThreeSumNode has exactly two children not {self.nchildren()}!")
+
+        self.set_default_keys()
+
+        cdef CMR_MATROID_DEC *child1_dec = CMRmatroiddecChild(self._dec, 0)
+        cdef CMR_ELEMENT *parent_rows1 = CMRmatroiddecChildRowsToParent(self._dec, 0)
+        cdef CMR_ELEMENT *parent_columns1 = CMRmatroiddecChildColumnsToParent(self._dec, 0)
+        cdef CMR_CHRMAT *mat1 = CMRmatroiddecGetMatrix(child1_dec)
+
+        cdef CMR_MATROID_DEC *child2_dec = CMRmatroiddecChild(self._dec, 1)
+        cdef CMR_ELEMENT *parent_rows2 = CMRmatroiddecChildRowsToParent(self._dec, 1)
+        cdef CMR_ELEMENT *parent_columns2 = CMRmatroiddecChildColumnsToParent(self._dec, 1)
+        cdef CMR_CHRMAT *mat2 = CMRmatroiddecGetMatrix(child2_dec)
+
+        cdef size_t index1, index2
+
+        child1_nrows = CMRmatroiddecNumRows(child1_dec)
+        child1_ncols = CMRmatroiddecNumColumns(child1_dec)
+
+        if self.is_concentrated_rank(): # Mixed_Mixed
+            child1_row_keys = tuple(self._CMRelement_to_key(parent_rows1[i])
+                                    for i in range(child1_nrows))
+            child1_column_keys = tuple(self._CMRelement_to_key(parent_columns1[i])
+                                    for i in range(child1_ncols - 1))
+
+            row1_index = child1_nrows - 2
+            CMR_CALL(CMRchrmatFindEntry(mat1, row1_index, child1_ncols-1, &index1))
+            if index1 == SIZE_MAX:
+                eps1 = Integer(0)
+            else:
+                eps1 = Integer(mat1.entryValues[index1])
+            if eps1 != 1:
+                raise ValueError(f"First child in the Mixed_Mixed Three Sum "
+                                 f"has 1 in the entry  "
+                                 f"row {row1_index} and column {child1_ncols-1} "
+                                 f"but got {eps1}")
+
+            row2_index = child1_nrows - 1
+            CMR_CALL(CMRchrmatFindEntry(mat1, row2_index, child1_ncols-1, &index2))
+            if index2 == SIZE_MAX:
+                eps2 = Integer(0)
+            else:
+                eps2 = Integer(mat1.entryValues[index2])
+            if eps2 != 1 and eps2 != -1:
+                raise ValueError(f"First child in the Mixed_Mixed Three Sum "
+                                 f"has 1 or -1 in the entry  "
+                                 f"row {row2_index} and column {child1_ncols-1} "
+                                 f"but got {eps2}")
+
+            extra_key = ElementKey((eps1, child1_row_keys[row1_index],
+                                    eps2, child1_row_keys[row2_index]),
+                                    composition=True)
+            child1_column_keys += (extra_key,)
+        else: # Wide_Wide
+            child1_row_keys = tuple(self._CMRelement_to_key(parent_rows1[i])
+                                    for i in range(child1_nrows))
+            child1_column_keys = tuple(self._CMRelement_to_key(parent_columns1[i])
+                                    for i in range(child1_ncols - 1))
+
+            row_index = child1_nrows - 1
+            column_index = child1_ncols - 2
+            CMR_CALL(CMRchrmatFindEntry(mat1, row_index, child1_ncols-1, &index1))
+            if index1 == SIZE_MAX:
+                eps1 = Integer(0)
+            else:
+                eps1 = Integer(mat1.entryValues[index1])
+            if eps1 != 1 and eps1 != -1:
+                raise ValueError(f"First child in the Wide_Wide Three Sum "
+                                 f"has 1 or -1 in the entry  "
+                                 f"row {row_index} and column {child1_ncols-1} "
+                                 f"but got {eps1}")
+
+            extra_key = ElementKey((1, child1_column_keys[column_index],
+                                    eps1, child1_row_keys[row_index]),
+                                    composition=True)
+            child1_column_keys += (extra_key,)
+
+        child1 = create_DecompositionNode(child1_dec, root=self._root or self,
+                                          row_keys=child1_row_keys,
+                                          column_keys=child1_column_keys)
+
+        child2_nrows = CMRmatroiddecNumRows(child2_dec)
+        child2_ncols = CMRmatroiddecNumColumns(child2_dec)
+
+        if self.is_concentrated_rank(): # Mixed_Mixed
+            child2_row_keys = tuple(self._CMRelement_to_key(parent_rows2[i])
+                                    for i in range(1, child2_nrows))
+            child2_column_keys = tuple(self._CMRelement_to_key(parent_columns2[i])
+                                       for i in range(child2_ncols))
+
+            CMR_CALL(CMRchrmatFindEntry(mat2, 0, 0, &index1))
+            if index1 == SIZE_MAX:
+                eps1 = Integer(0)
+            else:
+                eps1 = Integer(mat1.entryValues[index1])
+            if eps1 != 1 and eps1 != -1:
+                raise ValueError(f"Second child in the Mixed_Mixed Three Sum "
+                                 f"has 1 or -1 in the entry  "
+                                 f"row {0} and column {0} "
+                                 f"but got {eps1}")
+
+            CMR_CALL(CMRchrmatFindEntry(mat2, 0, 1, &index2))
+            if index2 == SIZE_MAX:
+                eps2 = Integer(0)
+            else:
+                eps2 = Integer(mat1.entryValues[index2])
+            if eps2 != 1:
+                raise ValueError(f"Second child in the Mixed_Mixed Three Sum "
+                                 f"has 1 in the entry  "
+                                 f"row {0} and column {1} "
+                                 f"but got {eps2}")
+
+            extra_key = ElementKey((eps1, child2_column_keys[0],
+                                    eps2, child2_column_keys[1]),
+                                    composition=True)
+            child2_row_keys = (extra_key,) + child2_row_keys
+        else: # Wide_Wide
+            child2_row_keys = tuple(self._CMRelement_to_key(parent_rows2[i])
+                                    for i in range(child2_nrows))
+
+            CMR_CALL(CMRchrmatFindEntry(mat2, 0, 0, &index1))
+            if index1 == SIZE_MAX:
+                eps1 = Integer(0)
+            else:
+                eps1 = Integer(mat1.entryValues[index1])
+
+            if eps1 != 1 and eps1 != -1:
+                raise ValueError(f"Second child in the Wide_Wide Three Sum "
+                                 f"has 1 or -1 in the entry  "
+                                 f"row {0} and column {0} "
+                                 f"but got {eps1}")
+
+            child2_column_keys = tuple(self._CMRelement_to_key(parent_columns2[i])
+                                       for i in range(1, child2_ncols))
+            extra_key = ElementKey((1, child2_column_keys[0],
+                                    eps1, child2_row_keys[0]),
+                                    composition=True)
+            child2_column_keys = (extra_key,) + child2_column_keys
+
+        child2 = create_DecompositionNode(child2_dec, root=self._root or self,
+                                          row_keys=child2_row_keys,
+                                          column_keys=child2_column_keys)
+
+        parent_row1_indices = tuple(CMRelementToRowIndex(parent_rows1[i])
+                                   for i in range(child1_nrows))
+        parent_column1_indices = tuple(CMRelementToColumnIndex(parent_columns1[i])
+                                      for i in range(child1_ncols))
+        child1._parent_indices = parent_row1_indices, parent_column1_indices
+
+        parent_row2_indices = tuple(CMRelementToRowIndex(parent_rows2[i])
+                                   for i in range(child2_nrows))
+        parent_column2_indices = tuple(CMRelementToColumnIndex(parent_columns2[i])
+                                      for i in range(child2_ncols))
+        child2._parent_indices = parent_row2_indices, parent_column2_indices
+        return (child1, child2)
 
     def is_distributed_ranks(self):
         r"""
@@ -897,9 +1159,70 @@ cdef class PivotsNode(DecompositionNode):
 
         return tuple((pivot_rows[i], pivot_columns[i]) for i in range(self.npivots()))
 
+    @cached_method
+    def _children(self):
+        r"""
+        """
+        self.set_default_keys()
+
+        return tuple(self._create_child_node(index)
+                     for index in range(self.nchildren()))
+
 
 cdef class SubmatrixNode(DecompositionNode):
     pass
+
+
+cdef class ElementKey:
+
+    cdef frozenset _key
+    cdef bint _composition
+
+    def __init__(self, keys, composition=False):
+        """
+        Create the element key for a row or column index
+        of :class:`DecompositionNode`.
+
+        INPUT:
+
+        - ``keys`` -- a row/column key or a tuple
+        (`\pm 1`, row/column key, `\pm 1`, row/column key).
+        - ``composition`` -- ``True`` or ``False`` (default).
+        whether the key is a composition key or not.
+        If ``False``, ``self._key`` is a frozenset with a row/column key.
+        If ``True``, ``self._key`` is a frozenset with two tuples,
+        where each tuple has a sign value and a row/column key.
+        For example, ``frozenset((1,'a'), (-1,'7'))``.
+        """
+        if composition:
+            sign1, key1, sign2, key2 = keys
+            self._key = frozenset([(sign1, key1), (sign2, key2)])
+            self._composition = True
+        else:
+            self._key = frozenset((keys,))
+            self._composition = False
+
+    @property
+    def key(self):
+        return self._key
+
+    def __hash__(self):
+        return hash(self._key)
+
+    def __eq__(self, other):
+        if isinstance(other, ElementKey):
+            return self._key == other._key
+        return False
+
+    def __repr__(self):
+        """
+        The composition key is sorted by the string of keys.
+        """
+        if self._composition:
+            sorted_key = sorted(self._key, key=lambda x: (str(x[1]), x[0]))
+            return "".join(['+'+str(a[1]) if a[0] == 1 else '-'+str(a[1]) for a in sorted_key])
+        else:
+            return "".join([str(a) for a in self._key])
 
 
 cdef _class(CMR_MATROID_DEC *dec):
@@ -952,20 +1275,3 @@ cdef create_DecompositionNode(CMR_MATROID_DEC *dec, root=None, row_keys=None, co
     if column_keys is not None:
         result._set_column_keys(column_keys)
     return result
-
-
-cdef CMRelement_to_label(CMR_ELEMENT element, indices_label=False):
-    r"""
-    """
-    if not CMRelementIsValid(element):
-        raise ValueError('CMRelement index not valid')
-    if CMRelementIsRow(element):
-        if indices_label:
-            return ('r',CMRelementToRowIndex(element))
-        else:
-            return CMRelementToRowIndex(element)
-    else:
-        if indices_label:
-            return ('c', CMRelementToColumnIndex(element))
-        else:
-            return CMRelementToColumnIndex(element)
