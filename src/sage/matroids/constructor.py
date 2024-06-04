@@ -102,9 +102,10 @@ Functions
 
 
 from itertools import combinations
+from sage.categories.morphism import Morphism
 from sage.combinat.posets.lattices import FiniteLatticePoset
 from sage.matrix.constructor import Matrix
-from sage.structure.element import is_Matrix
+from sage.structure.element import Matrix as matrix
 from sage.rings.integer_ring import ZZ
 from sage.rings.rational_field import QQ
 from sage.categories.fields import Fields
@@ -805,12 +806,11 @@ def Matroid(groundset=None, data=None, **kwds):
             Graph = ()
         if isinstance(data, Graph):
             key = 'graph'
-        elif is_Matrix(data) or (
-             isinstance(data, tuple) and is_Matrix(data[0])):
+        elif isinstance(data, matrix) or (
+             isinstance(data, tuple) and isinstance(data[0], matrix)):
             key = 'matrix'
-        elif isinstance(data, sage.modules.with_basis.morphism.ModuleMorphism) or (
-             isinstance(data, tuple) and
-             isinstance(data[0], sage.modules.with_basis.morphism.ModuleMorphism)):
+        elif isinstance(data, Morphism) or (
+             isinstance(data, tuple) and isinstance(data[0], Morphism)):
             key = 'morphism'
         elif isinstance(data, sage.matroids.matroid.Matroid):
             key = 'matroid'
@@ -958,7 +958,7 @@ def Matroid(groundset=None, data=None, **kwds):
             A = A.matrix()
 
         # Fix the representation
-        if not is_Matrix(A):
+        if not isinstance(A, matrix):
             if base_ring is not None:
                 A = Matrix(base_ring, A)
             else:
