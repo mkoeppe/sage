@@ -38,4 +38,6 @@ from sage.schemes.generic.all import *
 
 from sage.schemes.toric.all import *
 
+from sage.schemes.cyclic_covers.all import *
+
 from sage.schemes.berkovich.all import *
