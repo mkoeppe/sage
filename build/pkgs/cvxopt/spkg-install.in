@@ -68,6 +68,15 @@ export CVXOPT_LAPACK_LIB="$(cvxopt_output l lapack)"
 if test "x$SAGE_SUITESPARSE_PREFIX" != "x"; then
    export CVXOPT_SUITESPARSE_LIB_DIR="${SAGE_SUITESPARSE_PREFIX}"
    export CVXOPT_SUITESPARSE_INC_DIR="${SAGE_SUITESPARSE_PREFIX}/include"
+else
+   # Point suitesparse include directory to $SAGE_LOCAL/include/suitesparse
+   # (which should suffice for modern distros including conda).
+   # If there would be distros that install the headers directly into
+   # $SAGE_LOCAL/include instead, proper headers check (both in
+   # $SAGE_LOCAL/include and then $SAGE_LOCAL/include/suitesparse)
+   # should be added before setting the include dir.
+   export CVXOPT_SUITESPARSE_LIB_DIR="${SAGE_LOCAL}/lib"
+   export CVXOPT_SUITESPARSE_INC_DIR="${SAGE_LOCAL}/include/suitesparse"
 fi
 
 export CVXOPT_BUILD_GLPK=1
