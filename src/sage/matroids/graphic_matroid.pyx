@@ -1125,7 +1125,7 @@ cdef class GraphicMatroid(Matroid):
         """
         return True
 
-    def is_regular(self):
+    def is_regular(self, **kwds):
         r"""
         Return if ``self`` is regular.
 
