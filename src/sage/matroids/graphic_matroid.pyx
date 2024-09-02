@@ -1111,7 +1111,7 @@ cdef class GraphicMatroid(Matroid):
         """
         return True
 
-    def is_graphic(self):
+    def is_graphic(self, **kwds):
         r"""
         Return if ``self`` is graphic.
 
