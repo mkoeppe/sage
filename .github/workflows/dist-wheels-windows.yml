@@ -183,7 +183,7 @@ jobs:
       #TARGETS_PRE: ccache libpng mpfr mpc mpfi givaro cliquer libhomfly gsl pari ntl flint iml lcalc libbraiding m4ri m4rie planarity rw gap cddlib nauty gfan ecm tachyon pip
       TARGETS_PRE: >-
         gmp
-        nauty
+        planarity
         symmetrica
       CIBW_BUILD: "*${{ matrix.build }}*"
       # Disable building PyPy wheels on all platforms
@@ -382,11 +382,11 @@ jobs:
         with:
           package-dir: unpacked/passagemath_categories
 
-      - name: sagemath-nauty
-        id:   sagemath-nauty
+      - name: sagemath-planarity
+        id:   sagemath-planarity
         uses: pypa/cibuildwheel@v2.23.0
         with:
-          package-dir: unpacked/passagemath_nauty
+          package-dir: unpacked/passagemath_planarity
 
       - name: sagemath-combinat
         id:   sagemath-combinat
@@ -420,4 +420,4 @@ jobs:
       distributions: >-
         ['sagemath-categories',
          'sagemath-combinat',
-         'sagemath-nauty']
+         'sagemath-planarity']
