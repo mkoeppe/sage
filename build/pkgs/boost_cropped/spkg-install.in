@@ -3,4 +3,6 @@ sdh_cmake -GNinja \
       -DBOOST_INSTALL_LAYOUT=tagged \
       .
 cmake --build .
-DESTDIR=$SAGE_DESTDIR cmake --install .
+# DESTDIR staging fails on MinGW: https://github.com/passagemath/passagemath/pull/1081#issuecomment-3017283258
+# DESTDIR=$SAGE_DESTDIR cmake --install .
+cmake --install .
