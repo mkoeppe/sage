@@ -23,6 +23,10 @@ on:
       - '*'
   workflow_dispatch:
     # Allow to run manually
+    inputs:
+      tox_system_factors:
+        description: 'System factors to test (JSON list; default: all)'
+        required: false
 
 permissions:
   packages: write
@@ -31,6 +35,7 @@ jobs:
 
   # standard (without ptest) for the default platform (used by build.yml etc.)
   default:
+    if: inputs.tox_system_factors != ''
     uses: ./.github/workflows/docker.yml
     with:
       # Build from scratch
@@ -63,6 +68,7 @@ jobs:
       targets_pre: all-sage-local
       targets: build sagemath_doc_html-build-deps
       targets_optional: doc-html ptest-nodoc
+      tox_system_factors: ${{ inputs.tox_system_factors }}
       tox_packages_factors: >-
           ["standard"]
       docker_push_repository: ghcr.io/${{ github.repository }}/
@@ -82,6 +88,7 @@ jobs:
       targets_pre: all-sage-local
       targets: build sagemath_doc_html-build-deps
       targets_optional: doc-html ptest-nodoc
+      tox_system_factors: ${{ inputs.tox_system_factors }}
       tox_packages_factors: >-
           ["minimal"]
       docker_push_repository: ghcr.io/${{ github.repository }}/
@@ -98,6 +105,7 @@ jobs:
       free_disk_space: true
       from_docker_repository: ghcr.io/${{ github.repository }}/
       from_docker_target: "with-targets"
+      tox_system_factors: ${{ inputs.tox_system_factors }}
       tox_packages_factors: >-
           ["standard"]
       docker_targets: "with-targets-optional"
@@ -115,6 +123,7 @@ jobs:
       free_disk_space: true
       from_docker_repository: ghcr.io/${{ github.repository }}/
       from_docker_target: "with-targets"
+      tox_system_factors: ${{ inputs.tox_system_factors }}
       tox_packages_factors: >-
           ["standard"]
       docker_targets: "with-targets-optional"
